@@ -11,6 +11,9 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { getCurrentUser } from "../lib/session.functions";
+import type { SessionUser } from "../lib/auth.server";
+
 
 function NotFoundComponent() {
   return (
@@ -73,7 +76,13 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  // Reads the HttpOnly session cookie on the server so every page renders the
+  // correct auth state in its first HTML response.
+  loader: async (): Promise<{ user: SessionUser | null }> => ({
+    user: (await getCurrentUser()) as SessionUser | null,
+  }),
   head: () => ({
+
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
