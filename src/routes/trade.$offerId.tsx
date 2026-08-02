@@ -27,7 +27,7 @@ export const Route = createFileRoute("/trade/$offerId")({
 });
 
 function TradeConfirmationPage() {
-  const { offer } = Route.useLoaderData();
+  const { offer } = Route.useLoaderData() as { offer: Offer };
   const [confirmed, setConfirmed] = useState(false);
   const counterpartyConfirmed = true; // stands in for the stored confirmation record
 

@@ -29,7 +29,7 @@ export const Route = createFileRoute("/offers/$offerId")({
 });
 
 function OfferDetailPage() {
-  const { offer } = Route.useLoaderData();
+  const { offer } = Route.useLoaderData() as { offer: Offer };
   const typeLabel =
     POST_TYPES.find((type) => type.value === offer.postType)?.label ?? offer.postType;
 
