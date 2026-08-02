@@ -1,12 +1,15 @@
-import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { Link, useLoaderData, useRouterState } from "@tanstack/react-router";
+import type { SessionUser } from "@/lib/auth.server";
 
 /**
- * Sticky site navigation. Shows both auth states — the toggle stands in for a
- * server-rendered session check (`{% if current_user %}` when ported).
+ * Sticky site navigation. The signed-in user comes from the server-rendered
+ * root loader, which reads the HttpOnly session cookie — no client-side auth
+ * state, so the correct state is in the first HTML response.
  */
-export function SiteNav({ username = "tigerdev" }: { username?: string }) {
-  const [loggedIn, setLoggedIn] = useState(false);
+export function SiteNav() {
+  const { user } = useLoaderData({ from: "__root__" }) as { user: SessionUser | null };
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const loginHref = `/api/auth/discord/login?returnTo=${encodeURIComponent(pathname)}`;
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/85 backdrop-blur-md">
@@ -32,31 +35,45 @@ export function SiteNav({ username = "tigerdev" }: { username?: string }) {
           </a>
         </div>
 
-        {loggedIn ? (
+        {user ? (
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-2 text-sm">
-              <span
-                aria-hidden="true"
-                className="flex h-7 w-7 items-center justify-center rounded-full bg-elevated text-xs font-semibold text-accent"
-              >
-                {username.slice(0, 2).toUpperCase()}
-              </span>
-              <span className="hidden sm:inline">{username}</span>
+              {user.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt=""
+                  width={28}
+                  height={28}
+                  loading="lazy"
+                  className="h-7 w-7 rounded-full border border-border"
+                />
+              ) : (
+                <span
+                  aria-hidden="true"
+                  className="flex h-7 w-7 items-center justify-center rounded-full bg-elevated text-xs font-semibold text-accent"
+                >
+                  {user.username.slice(0, 2).toUpperCase()}
+                </span>
+              )}
+              <span className="hidden sm:inline">{user.displayName ?? user.username}</span>
             </span>
-            <button
-              type="button"
-              onClick={() => setLoggedIn(false)}
-              className="text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
-            >
-              Log out
-            </button>
+            {/* Logout is a POST form so it can't be triggered by a stray GET. */}
+            <form method="post" action="/api/auth/logout">
+              <input type="hidden" name="returnTo" value={pathname} />
+              <button
+                type="submit"
+                className="text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+              >
+                Log out
+              </button>
+            </form>
           </div>
         ) : (
-          <button type="button" onClick={() => setLoggedIn(true)} className="btn-accent">
+          <a href={loginHref} className="btn-accent" rel="nofollow">
             <span aria-hidden="true">◈</span>
             <span className="hidden sm:inline">Login with Discord</span>
             <span className="sm:hidden">Login</span>
-          </button>
+          </a>
         )}
       </nav>
     </header>
