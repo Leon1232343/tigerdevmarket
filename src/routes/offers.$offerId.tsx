@@ -2,10 +2,10 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { SiteNav } from "@/components/market/SiteNav";
 import { SiteFooter } from "@/components/market/SiteFooter";
 import { Stars } from "@/components/market/Stars";
-import { getOffer, postTypeClass, POST_TYPES } from "@/lib/market-data";
+import { getOffer, postTypeClass, POST_TYPES, type Offer } from "@/lib/market-data";
 
 export const Route = createFileRoute("/offers/$offerId")({
-  loader: ({ params }) => {
+  loader: ({ params }): { offer: Offer } => {
     const offer = getOffer(params.offerId);
     if (!offer) throw notFound();
     return { offer };

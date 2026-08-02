@@ -10,33 +10,53 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OffersOfferIdRouteImport } from './routes/offers.$offerId'
+import { Route as TradeOfferIdRouteImport } from './routes/trade.$offerId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OffersOfferIdRoute = OffersOfferIdRouteImport.update({
+  id: '/offers/$offerId',
+  path: '/offers/$offerId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TradeOfferIdRoute = TradeOfferIdRouteImport.update({
+  id: '/trade/$offerId',
+  path: '/trade/$offerId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/offers/$offerId': typeof OffersOfferIdRoute
+  '/trade/$offerId': typeof TradeOfferIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/offers/$offerId': typeof OffersOfferIdRoute
+  '/trade/$offerId': typeof TradeOfferIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/offers/$offerId': typeof OffersOfferIdRoute
+  '/trade/$offerId': typeof TradeOfferIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/offers/$offerId' | '/trade/$offerId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/offers/$offerId' | '/trade/$offerId'
+  id: '__root__' | '/' | '/offers/$offerId' | '/trade/$offerId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  OffersOfferIdRoute: typeof OffersOfferIdRoute
+  TradeOfferIdRoute: typeof TradeOfferIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +68,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/offers/$offerId': {
+      id: '/offers/$offerId'
+      path: '/offers/$offerId'
+      fullPath: '/offers/$offerId'
+      preLoaderRoute: typeof OffersOfferIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trade/$offerId': {
+      id: '/trade/$offerId'
+      path: '/trade/$offerId'
+      fullPath: '/trade/$offerId'
+      preLoaderRoute: typeof TradeOfferIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  OffersOfferIdRoute: OffersOfferIdRoute,
+  TradeOfferIdRoute: TradeOfferIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

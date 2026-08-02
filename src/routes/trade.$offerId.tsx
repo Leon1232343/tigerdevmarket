@@ -1,9 +1,9 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useState } from "react";
-import { getOffer } from "@/lib/market-data";
+import { getOffer, type Offer } from "@/lib/market-data";
 
 export const Route = createFileRoute("/trade/$offerId")({
-  loader: ({ params }) => {
+  loader: ({ params }): { offer: Offer } => {
     const offer = getOffer(params.offerId);
     if (!offer) throw notFound();
     return { offer };
