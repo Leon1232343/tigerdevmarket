@@ -11,6 +11,9 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { getCurrentUser } from "../lib/session.functions";
+import type { SessionUser } from "../lib/auth.server";
+
 
 function NotFoundComponent() {
   return (
