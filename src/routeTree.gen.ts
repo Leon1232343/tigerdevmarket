@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as OffersOfferIdRouteImport } from './routes/offers.$offerId'
 import { Route as TradeOfferIdRouteImport } from './routes/trade.$offerId'
 import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth/logout'
@@ -19,6 +20,11 @@ import { Route as ApiAuthDiscordLoginRouteImport } from './routes/api/auth/disco
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OffersOfferIdRoute = OffersOfferIdRouteImport.update({
@@ -49,6 +55,7 @@ const ApiAuthDiscordLoginRoute = ApiAuthDiscordLoginRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/offers/$offerId': typeof OffersOfferIdRoute
   '/trade/$offerId': typeof TradeOfferIdRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
@@ -57,6 +64,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/offers/$offerId': typeof OffersOfferIdRoute
   '/trade/$offerId': typeof TradeOfferIdRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
@@ -66,6 +74,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/offers/$offerId': typeof OffersOfferIdRoute
   '/trade/$offerId': typeof TradeOfferIdRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
@@ -76,6 +85,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/login'
     | '/offers/$offerId'
     | '/trade/$offerId'
     | '/api/auth/logout'
@@ -84,6 +94,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/login'
     | '/offers/$offerId'
     | '/trade/$offerId'
     | '/api/auth/logout'
@@ -92,6 +103,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/login'
     | '/offers/$offerId'
     | '/trade/$offerId'
     | '/api/auth/logout'
@@ -101,6 +113,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LoginRoute: typeof LoginRoute
   OffersOfferIdRoute: typeof OffersOfferIdRoute
   TradeOfferIdRoute: typeof TradeOfferIdRoute
   ApiAuthLogoutRoute: typeof ApiAuthLogoutRoute
@@ -115,6 +128,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/offers/$offerId': {
@@ -157,6 +177,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LoginRoute: LoginRoute,
   OffersOfferIdRoute: OffersOfferIdRoute,
   TradeOfferIdRoute: TradeOfferIdRoute,
   ApiAuthLogoutRoute: ApiAuthLogoutRoute,
