@@ -1,13 +1,23 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useState } from "react";
-import { getOffer, type Offer } from "@/lib/market-data";
+import { type Offer } from "@/lib/market-data";
+import { fetchOffer } from "@/lib/offers.functions";
 
 export const Route = createFileRoute("/trade/$offerId")({
-  loader: ({ params }): { offer: Offer } => {
-    const offer = getOffer(params.offerId);
+  loader: async ({ params }): Promise<{ offer: Offer }> => {
+    const offer = await fetchOffer({ data: { offerId: params.offerId } });
     if (!offer) throw notFound();
     return { offer };
   },
+  errorComponent: ({ error }) => (
+    <div role="alert" className="mx-auto max-w-xl px-4 py-24 text-center text-sm">
+      Could not load this trade. {error.message}
+    </div>
+  ),
+  notFoundComponent: () => (
+    <div className="mx-auto max-w-xl px-4 py-24 text-center text-sm">Offer not found.</div>
+  ),
+
   head: () => ({
     meta: [
       { title: "Confirm trade — Tiger Market" },
