@@ -3,7 +3,7 @@
  * Never import this from client code.
  */
 import { Pool } from "pg";
-import type { OfferSource, PostType } from "@/lib/market-data";
+import type { Offer, OfferSource, PostType } from "@/lib/market-data";
 
 let pool: Pool | undefined;
 
