@@ -83,7 +83,7 @@ export type OfferDTO = {
   imageUrl: string | null;
   serverName: string | null;
   postedAt: string | null;
-  scamWarning?: string;
+  scamWarning?: string | undefined;
   originalUrl: string;
 };
 
