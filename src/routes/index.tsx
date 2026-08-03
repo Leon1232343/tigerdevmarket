@@ -1,9 +1,27 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { SiteNav } from "@/components/market/SiteNav";
 import { SiteFooter } from "@/components/market/SiteFooter";
 import { OfferCard } from "@/components/market/OfferCard";
-import { CATEGORIES, OFFERS, POST_TYPES } from "@/lib/market-data";
+import { POST_TYPES } from "@/lib/market-data";
+import { fetchMarketOverview, fetchOffers, type OfferListInput } from "@/lib/offers.functions";
+
+const overviewQuery = queryOptions({
+  queryKey: ["market-overview"],
+  queryFn: () => fetchMarketOverview(),
+  staleTime: 60_000,
+});
+
+const PER_PAGE = 12;
+
+function offersQuery(input: Required<OfferListInput>) {
+  return queryOptions({
+    queryKey: ["offers", input],
+    queryFn: () => fetchOffers({ data: input }),
+    staleTime: 30_000,
+  });
+}
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -18,49 +36,53 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Browse 1,200+ active offers for Roblox scripting, building, UI design, 3D modeling, GFX and animation work.",
+          "Browse live offers for Roblox scripting, building, UI design, 3D modeling, GFX and animation work.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
+  loader: async ({ context }) => {
+    await Promise.all([
+      context.queryClient.ensureQueryData(overviewQuery),
+      context.queryClient.ensureQueryData(
+        offersQuery({ category: "all", postType: "all", search: "", page: 1, perPage: PER_PAGE }),
+      ),
+    ]);
+  },
+  errorComponent: ({ error }) => (
+    <div role="alert" className="mx-auto max-w-xl px-4 py-24 text-center text-sm">
+      Could not load offers right now. {error.message}
+    </div>
+  ),
+  notFoundComponent: () => <div className="px-4 py-24 text-center text-sm">Nothing here.</div>,
   component: HomePage,
 });
 
-const PER_PAGE = 6;
-
-/** Bento tile sizing derived from listing volume — data-driven, not arbitrary. */
-function tileSpan(listings: number) {
-  if (listings >= 350) return "sm:col-span-2 sm:row-span-2";
-  if (listings >= 250) return "sm:col-span-2";
-  if (listings >= 120) return "sm:row-span-2";
+/** Bento tile sizing derived from live listing volume — data-driven, not arbitrary. */
+function tileSpan(listings: number, max: number) {
+  const ratio = max > 0 ? listings / max : 0;
+  if (ratio >= 0.8) return "sm:col-span-2 sm:row-span-2";
+  if (ratio >= 0.5) return "sm:col-span-2";
+  if (ratio >= 0.25) return "sm:row-span-2";
   return "";
 }
 
 function HomePage() {
-  const [heroQuery, setHeroQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [postType, setPostType] = useState("all");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
 
-  const results = useMemo(() => {
-    const term = (query || heroQuery).trim().toLowerCase();
-    return OFFERS.filter((offer) => {
-      if (category !== "all" && offer.category !== category) return false;
-      if (postType !== "all" && offer.postType !== postType) return false;
-      if (
-        term &&
-        !`${offer.title} ${offer.excerpt} ${offer.seller} ${offer.category}`
-          .toLowerCase()
-          .includes(term)
-      )
-        return false;
-      return true;
-    });
-  }, [category, postType, query, heroQuery]);
+  const { data: overview } = useSuspenseQuery(overviewQuery);
+  const { data, isFetching } = useQuery({
+    ...offersQuery({ category, postType, search: query, page, perPage: PER_PAGE }),
+    placeholderData: (previous) => previous,
+  });
 
-  const totalPages = Math.max(1, Math.ceil(results.length / PER_PAGE));
-  const currentPage = Math.min(page, totalPages);
-  const visible = results.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
+  const offers = data?.offers ?? [];
+  const totalPages = data?.totalPages ?? 1;
+  const maxListings = Math.max(...overview.categories.map((cat) => cat.listings), 1);
 
   function reset(fn: () => void) {
     fn();
@@ -81,7 +103,7 @@ function HomePage() {
             </h1>
             <p className="mx-auto mt-5 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
               Scripting, building, UI, modeling, GFX and animation — listed by real developers,
-              synced from Discord and the web.
+              synced live from Discord and the web.
             </p>
 
             <form
@@ -101,8 +123,8 @@ function HomePage() {
                 name="q"
                 className="field sm:h-11"
                 placeholder="Search offers — e.g. combat system, UI kit, animator"
-                value={heroQuery}
-                onChange={(event) => reset(() => setHeroQuery(event.target.value))}
+                value={query}
+                onChange={(event) => reset(() => setQuery(event.target.value))}
               />
               <a href="#offers" className="btn-accent sm:h-11 sm:px-6">
                 Search
@@ -110,11 +132,25 @@ function HomePage() {
             </form>
 
             <p className="mt-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-              <span className="font-mono text-foreground/80">1,200</span> active offers
+              <span className="font-mono text-foreground/80">
+                {overview.stats.totalOffers.toLocaleString("en-US")}
+              </span>{" "}
+              live offers
               <span aria-hidden="true">·</span>
-              <span className="font-mono text-foreground/80">340</span> matches today
+              <span className="font-mono text-foreground/80">{overview.stats.offersToday}</span> new
+              in 24h
               <span aria-hidden="true">·</span>
-              <span className="text-gold">4.6★</span> avg rating
+              <span className="font-mono text-foreground/80">
+                {overview.stats.sellers.toLocaleString("en-US")}
+              </span>{" "}
+              developers
+              {overview.stats.avgRating > 0 && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span className="text-gold">{overview.stats.avgRating.toFixed(1)}★</span> avg
+                  rating
+                </>
+              )}
             </p>
           </div>
         </section>
@@ -127,14 +163,15 @@ function HomePage() {
           </div>
 
           <div className="mt-6 grid auto-rows-[104px] grid-cols-2 gap-3 sm:grid-cols-4">
-            {CATEGORIES.map((cat) => (
+            {overview.categories.map((cat) => (
               <button
                 key={cat.slug}
                 type="button"
-                onClick={() => reset(() => setCategory(cat.name))}
+                onClick={() => reset(() => setCategory(category === cat.name ? "all" : cat.name))}
                 aria-pressed={category === cat.name}
                 className={`surface surface-hover flex flex-col items-start justify-between p-4 text-left ${tileSpan(
                   cat.listings,
+                  maxListings,
                 )} ${category === cat.name ? "border-accent bg-accent-soft" : ""}`}
               >
                 <span aria-hidden="true" className="text-xl text-accent">
@@ -143,7 +180,7 @@ function HomePage() {
                 <span>
                   <span className="block font-display text-sm font-semibold">{cat.name}</span>
                   <span className="mt-0.5 block font-mono text-xs text-muted-foreground">
-                    {cat.listings} listings
+                    {cat.listings.toLocaleString("en-US")} listings
                   </span>
                 </span>
               </button>
@@ -153,7 +190,12 @@ function HomePage() {
 
         {/* Offer listing grid */}
         <section id="offers" className="mx-auto max-w-6xl scroll-mt-20 px-4 pb-20 sm:px-6">
-          <h2 className="text-2xl font-semibold sm:text-3xl">Latest offers</h2>
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <h2 className="text-2xl font-semibold sm:text-3xl">Latest offers</h2>
+            <p className="font-mono text-xs text-muted-foreground">
+              {(data?.total ?? 0).toLocaleString("en-US")} matching
+            </p>
+          </div>
 
           <div className="surface mt-6 grid gap-3 p-4 sm:grid-cols-3">
             <div>
@@ -167,7 +209,7 @@ function HomePage() {
                 onChange={(event) => reset(() => setCategory(event.target.value))}
               >
                 <option value="all">All categories</option>
-                {CATEGORIES.map((cat) => (
+                {overview.categories.map((cat) => (
                   <option key={cat.slug} value={cat.name}>
                     {cat.name}
                   </option>
@@ -207,10 +249,14 @@ function HomePage() {
             </div>
           </div>
 
-          {visible.length > 0 ? (
+          {offers.length > 0 ? (
             <>
-              <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {visible.map((offer) => (
+              <div
+                className={`mt-6 grid gap-4 transition-opacity sm:grid-cols-2 lg:grid-cols-3 ${
+                  isFetching ? "opacity-60" : ""
+                }`}
+              >
+                {offers.map((offer) => (
                   <OfferCard key={offer.publicId} offer={offer} />
                 ))}
               </div>
@@ -222,18 +268,18 @@ function HomePage() {
                 <button
                   type="button"
                   className="btn-ghost disabled:opacity-40"
-                  disabled={currentPage === 1}
-                  onClick={() => setPage((p) => p - 1)}
+                  disabled={page === 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
                 >
                   ← Prev
                 </button>
                 <span className="font-mono text-xs text-muted-foreground">
-                  Page {currentPage} of {totalPages}
+                  Page {page} of {totalPages.toLocaleString("en-US")}
                 </span>
                 <button
                   type="button"
                   className="btn-ghost disabled:opacity-40"
-                  disabled={currentPage === totalPages}
+                  disabled={page >= totalPages}
                   onClick={() => setPage((p) => p + 1)}
                 >
                   Next →
@@ -245,7 +291,9 @@ function HomePage() {
               <span aria-hidden="true" className="text-3xl">
                 🐯
               </span>
-              <h3 className="text-base font-semibold">No offers match those filters</h3>
+              <h3 className="text-base font-semibold">
+                {isFetching ? "Loading offers…" : "No offers match those filters"}
+              </h3>
               <p className="max-w-sm text-xs text-muted-foreground">
                 Try a broader category or clear the search term.
               </p>
@@ -257,7 +305,6 @@ function HomePage() {
                     setCategory("all");
                     setPostType("all");
                     setQuery("");
-                    setHeroQuery("");
                   })
                 }
               >

@@ -2,14 +2,26 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { SiteNav } from "@/components/market/SiteNav";
 import { SiteFooter } from "@/components/market/SiteFooter";
 import { Stars } from "@/components/market/Stars";
-import { getOffer, postTypeClass, POST_TYPES, type Offer } from "@/lib/market-data";
+import { postTypeClass, POST_TYPES, type Offer } from "@/lib/market-data";
+import { fetchOffer } from "@/lib/offers.functions";
 
 export const Route = createFileRoute("/offers/$offerId")({
-  loader: ({ params }): { offer: Offer } => {
-    const offer = getOffer(params.offerId);
+  loader: async ({ params }): Promise<{ offer: Offer }> => {
+    const offer = await fetchOffer({ data: { offerId: params.offerId } });
     if (!offer) throw notFound();
     return { offer };
   },
+  errorComponent: ({ error }) => (
+    <div role="alert" className="mx-auto max-w-xl px-4 py-24 text-center text-sm">
+      Could not load this offer. {error.message}
+    </div>
+  ),
+  notFoundComponent: () => (
+    <div className="mx-auto max-w-xl px-4 py-24 text-center text-sm">
+      This offer no longer exists.
+    </div>
+  ),
+
   head: ({ loaderData }) => {
     const title = loaderData?.offer
       ? `${loaderData.offer.title} — Tiger Market`
