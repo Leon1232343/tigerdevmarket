@@ -64,28 +64,8 @@ export type OfferRow = {
   avg_score?: number | null;
 };
 
-export type OfferDTO = {
-  publicId: string;
-  title: string;
-  excerpt: string;
-  description: string[];
-  category: string;
-  categories: string[];
-  postType: PostType;
-  source: OfferSource;
-  seller: string;
-  verified: boolean;
-  price: string;
-  paymentMethods: string[];
-  rating: number;
-  reviews: number;
-  thumbnail: boolean;
-  imageUrl: string | null;
-  serverName: string | null;
-  postedAt: string | null;
-  scamWarning?: string | undefined;
-  originalUrl: string;
-};
+export type OfferDTO = Offer;
+
 
 const POST_TYPE_MAP: Record<string, PostType> = {
   "for hire": "forhire",
