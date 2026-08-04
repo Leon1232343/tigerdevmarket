@@ -3,7 +3,9 @@ import { SiteNav } from "@/components/market/SiteNav";
 import { SiteFooter } from "@/components/market/SiteFooter";
 import { Stars } from "@/components/market/Stars";
 import { postTypeClass, POST_TYPES, type Offer } from "@/lib/market-data";
+import { responsiveOfferImage } from "@/lib/offer-images";
 import { fetchOffer } from "@/lib/offers.functions";
+
 
 export const Route = createFileRoute("/offers/$offerId")({
   loader: async ({ params }): Promise<{ offer: Offer }> => {
@@ -42,8 +44,10 @@ export const Route = createFileRoute("/offers/$offerId")({
 
 function OfferDetailPage() {
   const { offer } = Route.useLoaderData() as { offer: Offer };
+  const hero = responsiveOfferImage(offer.imageUrl, 640, 16 / 9);
   const typeLabel =
     POST_TYPES.find((type) => type.value === offer.postType)?.label ?? offer.postType;
+
 
   return (
     <div className="min-h-screen">
@@ -101,11 +105,25 @@ function OfferDetailPage() {
               <span className="price-tag ml-auto text-sm">{offer.price}</span>
             </div>
 
-            <div className="mt-6 aspect-[16/7] w-full overflow-hidden rounded-lg border border-border bg-elevated">
-              <div className="flex h-full items-center justify-center text-4xl" aria-hidden="true">
-                {offer.thumbnail ? "🖼" : "🐯"}
+            {hero && (
+              <div className="mt-6 overflow-hidden rounded-lg border border-border">
+                <img
+                  src={hero.src}
+                  srcSet={hero.srcSet}
+                  sizes="(min-width: 768px) 720px, 100vw"
+                  width={hero.width}
+                  height={hero.height}
+                  alt={offer.title}
+                  loading="lazy"
+                  decoding="async"
+                  className="h-auto w-full object-cover"
+                  onError={(event) => {
+                    event.currentTarget.remove();
+                  }}
+                />
               </div>
-            </div>
+            )}
+
 
             <div className="mt-6 space-y-3 text-sm leading-relaxed text-muted-foreground">
               {offer.description.map((paragraph) => (
