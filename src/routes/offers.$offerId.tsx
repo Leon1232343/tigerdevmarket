@@ -42,8 +42,10 @@ export const Route = createFileRoute("/offers/$offerId")({
 
 function OfferDetailPage() {
   const { offer } = Route.useLoaderData() as { offer: Offer };
+  const hero = responsiveOfferImage(offer.imageUrl, 640, 16 / 9);
   const typeLabel =
     POST_TYPES.find((type) => type.value === offer.postType)?.label ?? offer.postType;
+
 
   return (
     <div className="min-h-screen">
