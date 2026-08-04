@@ -3,7 +3,9 @@ import { SiteNav } from "@/components/market/SiteNav";
 import { SiteFooter } from "@/components/market/SiteFooter";
 import { Stars } from "@/components/market/Stars";
 import { postTypeClass, POST_TYPES, type Offer } from "@/lib/market-data";
+import { responsiveOfferImage } from "@/lib/offer-images";
 import { fetchOffer } from "@/lib/offers.functions";
+
 
 export const Route = createFileRoute("/offers/$offerId")({
   loader: async ({ params }): Promise<{ offer: Offer }> => {
