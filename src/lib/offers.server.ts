@@ -2,30 +2,31 @@
  * Server-only access to the external Tiger Market offers database (Render Postgres).
  * Never import this from client code.
  */
-import { Pool } from "pg";
+import { Client } from "pg";
 import type { Offer, OfferSource, PostType } from "@/lib/market-data";
 
-let pool: Pool | undefined;
-
-function getPool(): Pool {
-  if (!pool) {
-    const connectionString = process.env["TIGER_MARKET_DB_URL"];
-    if (!connectionString) throw new Error("TIGER_MARKET_DB_URL is not configured");
-    pool = new Pool({
-      connectionString,
-      ssl: { rejectUnauthorized: false },
-      max: 3,
-      idleTimeoutMillis: 10_000,
-      connectionTimeoutMillis: 10_000,
-    });
-  }
-  return pool;
-}
-
+/**
+ * Serverless runtimes cannot keep TCP sockets alive between requests, so a
+ * module-level pool hangs on reuse. Open a short-lived client per query instead.
+ */
 async function query<T>(sql: string, params: unknown[] = []): Promise<T[]> {
-  const result = await getPool().query(sql, params as never[]);
-  return result.rows as T[];
+  const connectionString = process.env["TIGER_MARKET_DB_URL"];
+  if (!connectionString) throw new Error("TIGER_MARKET_DB_URL is not configured");
+  const client = new Client({
+    connectionString,
+    ssl: { rejectUnauthorized: false },
+    connectionTimeoutMillis: 10_000,
+    query_timeout: 15_000,
+  });
+  await client.connect();
+  try {
+    const result = await client.query(sql, params as never[]);
+    return result.rows as T[];
+  } finally {
+    await client.end().catch(() => {});
+  }
 }
+
 
 /** Canonical categories shown in the bento grid, matched against the CSV `category` column. */
 export const CANONICAL_CATEGORIES = [
