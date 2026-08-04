@@ -71,19 +71,24 @@ function tileSpan(listings: number, max: number) {
 }
 
 function HomePage() {
+  const { overview: initialOverview, initialOffers } = Route.useLoaderData();
   const [category, setCategory] = useState("all");
   const [postType, setPostType] = useState("all");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
 
-  const { data: overview } = useSuspenseQuery(overviewQuery);
+  const isDefaultView = category === "all" && postType === "all" && query === "" && page === 1;
+
+  const { data: overview } = useQuery({ ...overviewQuery, initialData: initialOverview });
   const { data, isFetching } = useQuery({
     ...offersQuery({ category, postType, search: query, page, perPage: PER_PAGE }),
+    ...(isDefaultView ? { initialData: initialOffers } : {}),
     placeholderData: (previous) => previous,
   });
 
   const offers = data?.offers ?? [];
   const totalPages = data?.totalPages ?? 1;
+
   const maxListings = Math.max(...overview.categories.map((cat) => cat.listings), 1);
 
   function reset(fn: () => void) {
