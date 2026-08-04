@@ -14,6 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as OffersOfferIdRouteImport } from './routes/offers.$offerId'
 import { Route as TradeOfferIdRouteImport } from './routes/trade.$offerId'
 import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth/logout'
+import { Route as ApiPublicImgRouteImport } from './routes/api/public/img'
 import { Route as ApiAuthDiscordCallbackRouteImport } from './routes/api/auth/discord/callback'
 import { Route as ApiAuthDiscordLoginRouteImport } from './routes/api/auth/discord/login'
 
@@ -42,6 +43,11 @@ const ApiAuthLogoutRoute = ApiAuthLogoutRouteImport.update({
   path: '/api/auth/logout',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicImgRoute = ApiPublicImgRouteImport.update({
+  id: '/api/public/img',
+  path: '/api/public/img',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthDiscordCallbackRoute = ApiAuthDiscordCallbackRouteImport.update({
   id: '/api/auth/discord/callback',
   path: '/api/auth/discord/callback',
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/offers/$offerId': typeof OffersOfferIdRoute
   '/trade/$offerId': typeof TradeOfferIdRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
+  '/api/public/img': typeof ApiPublicImgRoute
   '/api/auth/discord/callback': typeof ApiAuthDiscordCallbackRoute
   '/api/auth/discord/login': typeof ApiAuthDiscordLoginRoute
 }
@@ -68,6 +75,7 @@ export interface FileRoutesByTo {
   '/offers/$offerId': typeof OffersOfferIdRoute
   '/trade/$offerId': typeof TradeOfferIdRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
+  '/api/public/img': typeof ApiPublicImgRoute
   '/api/auth/discord/callback': typeof ApiAuthDiscordCallbackRoute
   '/api/auth/discord/login': typeof ApiAuthDiscordLoginRoute
 }
@@ -78,6 +86,7 @@ export interface FileRoutesById {
   '/offers/$offerId': typeof OffersOfferIdRoute
   '/trade/$offerId': typeof TradeOfferIdRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
+  '/api/public/img': typeof ApiPublicImgRoute
   '/api/auth/discord/callback': typeof ApiAuthDiscordCallbackRoute
   '/api/auth/discord/login': typeof ApiAuthDiscordLoginRoute
 }
@@ -89,6 +98,7 @@ export interface FileRouteTypes {
     | '/offers/$offerId'
     | '/trade/$offerId'
     | '/api/auth/logout'
+    | '/api/public/img'
     | '/api/auth/discord/callback'
     | '/api/auth/discord/login'
   fileRoutesByTo: FileRoutesByTo
@@ -98,6 +108,7 @@ export interface FileRouteTypes {
     | '/offers/$offerId'
     | '/trade/$offerId'
     | '/api/auth/logout'
+    | '/api/public/img'
     | '/api/auth/discord/callback'
     | '/api/auth/discord/login'
   id:
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/offers/$offerId'
     | '/trade/$offerId'
     | '/api/auth/logout'
+    | '/api/public/img'
     | '/api/auth/discord/callback'
     | '/api/auth/discord/login'
   fileRoutesById: FileRoutesById
@@ -117,6 +129,7 @@ export interface RootRouteChildren {
   OffersOfferIdRoute: typeof OffersOfferIdRoute
   TradeOfferIdRoute: typeof TradeOfferIdRoute
   ApiAuthLogoutRoute: typeof ApiAuthLogoutRoute
+  ApiPublicImgRoute: typeof ApiPublicImgRoute
   ApiAuthDiscordCallbackRoute: typeof ApiAuthDiscordCallbackRoute
   ApiAuthDiscordLoginRoute: typeof ApiAuthDiscordLoginRoute
 }
@@ -158,6 +171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthLogoutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/img': {
+      id: '/api/public/img'
+      path: '/api/public/img'
+      fullPath: '/api/public/img'
+      preLoaderRoute: typeof ApiPublicImgRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/discord/callback': {
       id: '/api/auth/discord/callback'
       path: '/api/auth/discord/callback'
@@ -181,19 +201,10 @@ const rootRouteChildren: RootRouteChildren = {
   OffersOfferIdRoute: OffersOfferIdRoute,
   TradeOfferIdRoute: TradeOfferIdRoute,
   ApiAuthLogoutRoute: ApiAuthLogoutRoute,
+  ApiPublicImgRoute: ApiPublicImgRoute,
   ApiAuthDiscordCallbackRoute: ApiAuthDiscordCallbackRoute,
   ApiAuthDiscordLoginRoute: ApiAuthDiscordLoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

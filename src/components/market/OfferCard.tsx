@@ -1,8 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { postTypeClass, type Offer } from "@/lib/market-data";
+import { responsiveOfferImage } from "@/lib/offer-images";
 import { Stars } from "./Stars";
 
 export function OfferCard({ offer }: { offer: Offer }) {
+  const image = responsiveOfferImage(offer.imageUrl, 64);
+
   return (
     <article className="surface surface-hover relative overflow-hidden">
       {/* Left strip encodes post type */}
@@ -17,21 +20,20 @@ export function OfferCard({ offer }: { offer: Offer }) {
         className="flex h-full flex-col gap-3 p-4 pl-5"
       >
         <div className="flex items-center gap-3">
-          {offer.imageUrl ? (
+          {image && (
             <img
-              src={offer.imageUrl}
+              src={image.src}
+              srcSet={image.srcSet}
+              sizes="44px"
+              width={image.width}
+              height={image.height}
               alt=""
               loading="lazy"
+              decoding="async"
               className="h-11 w-11 shrink-0 rounded-md border border-border object-cover"
             />
-          ) : (
-            <span
-              aria-hidden="true"
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-border bg-elevated text-lg"
-            >
-              🐯
-            </span>
           )}
+
           <div className="min-w-0">
             <h3 className="truncate text-sm font-semibold">{offer.title}</h3>
             <p className="mt-0.5 text-xs text-muted-foreground">
