@@ -43,13 +43,15 @@ export const Route = createFileRoute("/")({
     ],
   }),
   loader: async ({ context }) => {
-    await Promise.all([
+    const [overview, initialOffers] = await Promise.all([
       context.queryClient.ensureQueryData(overviewQuery),
       context.queryClient.ensureQueryData(
         offersQuery({ category: "all", postType: "all", search: "", page: 1, perPage: PER_PAGE }),
       ),
     ]);
+    return { overview, initialOffers };
   },
+
   errorComponent: ({ error }) => (
     <div role="alert" className="mx-auto max-w-xl px-4 py-24 text-center text-sm">
       Could not load offers right now. {error.message}
