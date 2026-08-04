@@ -155,7 +155,12 @@ export function mapOffer(row: OfferRow): OfferDTO {
   const excerpt =
     excerptSource.length > 180 ? `${excerptSource.slice(0, 177).trimEnd()}…` : excerptSource;
   const categories = splitList(row.category);
-  const imageUrl = (row.image_url ?? "").trim() || null;
+  // Some rows store several URLs comma-separated; use the first usable one.
+  const imageUrl =
+    (row.image_url ?? "")
+      .split(",")
+      .map((part) => part.trim())
+      .find((part) => part.startsWith("http")) ?? null;
 
   return {
     publicId: String(row.offer_id),

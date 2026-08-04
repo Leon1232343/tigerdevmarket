@@ -117,6 +117,9 @@ function OfferDetailPage() {
                   loading="lazy"
                   decoding="async"
                   className="h-auto w-full object-cover"
+                  onError={(event) => {
+                    event.currentTarget.remove();
+                  }}
                 />
               </div>
             )}

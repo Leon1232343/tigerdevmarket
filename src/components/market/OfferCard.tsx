@@ -31,6 +31,9 @@ export function OfferCard({ offer }: { offer: Offer }) {
               loading="lazy"
               decoding="async"
               className="h-11 w-11 shrink-0 rounded-md border border-border object-cover"
+              onError={(event) => {
+                event.currentTarget.remove();
+              }}
             />
           )}
 
