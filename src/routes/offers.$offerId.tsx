@@ -101,11 +101,22 @@ function OfferDetailPage() {
               <span className="price-tag ml-auto text-sm">{offer.price}</span>
             </div>
 
-            <div className="mt-6 aspect-[16/7] w-full overflow-hidden rounded-lg border border-border bg-elevated">
-              <div className="flex h-full items-center justify-center text-4xl" aria-hidden="true">
-                {offer.thumbnail ? "🖼" : "🐯"}
+            {hero && (
+              <div className="mt-6 overflow-hidden rounded-lg border border-border">
+                <img
+                  src={hero.src}
+                  srcSet={hero.srcSet}
+                  sizes="(min-width: 768px) 720px, 100vw"
+                  width={hero.width}
+                  height={hero.height}
+                  alt={offer.title}
+                  loading="lazy"
+                  decoding="async"
+                  className="h-auto w-full object-cover"
+                />
               </div>
-            </div>
+            )}
+
 
             <div className="mt-6 space-y-3 text-sm leading-relaxed text-muted-foreground">
               {offer.description.map((paragraph) => (
