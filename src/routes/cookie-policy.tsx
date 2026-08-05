@@ -33,7 +33,7 @@ function CookiePolicyPage() {
           ← Back to Tiger Dev Market
         </Link>
 
-        <article className="prose prose-invert max-w-none">
+        <article className="max-w-none space-y-6 leading-7 text-foreground">
           <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
             Cookie Policy
           </h1>
@@ -115,7 +115,7 @@ function CookiePolicyPage() {
             Website and to use some of its features, such as access to secure areas.
           </p>
 
-          <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+          <div className="overflow-x-auto rounded-lg border border-border bg-card">
             <table className="min-w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
@@ -179,7 +179,9 @@ function CookiePolicyPage() {
             classifying these cookies with the help of their providers.
           </p>
 
-          <h2 className="text-xl font-semibold text-foreground">How can I control cookies on my browser?</h2>
+          <h2 className="text-xl font-semibold text-foreground">
+            How can I control cookies on my browser?
+          </h2>
           <p>
             As the means by which you can refuse cookies through your web browser controls vary
             from browser to browser, you should visit your browser's help menu for more information.
@@ -370,10 +372,7 @@ function CookiePolicyPage() {
           <p>
             If you have any questions about our use of cookies or other technologies, please email
             us at{" "}
-            <a
-              href="mailto:tigerdevmarket@aol.com"
-              className="text-accent hover:underline"
-            >
+            <a href="mailto:tigerdevmarket@aol.com" className="text-accent hover:underline">
               tigerdevmarket@aol.com
             </a>{" "}
             or by post to:
