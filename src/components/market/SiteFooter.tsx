@@ -12,6 +12,12 @@ export function SiteFooter() {
           >
             Cookie Policy
           </Link>
+          <Link
+            to="/terms-of-use"
+            className="transition-colors hover:text-foreground"
+          >
+            Terms of Use
+          </Link>
         </div>
         <p>Never pay upfront without a verified middleman.</p>
       </div>
