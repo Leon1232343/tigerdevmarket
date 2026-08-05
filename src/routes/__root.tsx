@@ -103,7 +103,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
+    scripts: [
+      {
+        src: "https://app.termly.io/resource-blocker/62da3507-e68f-4ef3-a756-417a2f56e9f1?autoBlock=on",
+      },
+    ],
   }),
+
 
   shellComponent: RootShell,
   component: RootComponent,
