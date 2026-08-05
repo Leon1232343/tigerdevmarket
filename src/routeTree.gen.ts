@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CookiePolicyRouteImport } from './routes/cookie-policy'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as TermsOfUseRouteImport } from './routes/terms-of-use'
 import { Route as OffersOfferIdRouteImport } from './routes/offers.$offerId'
 import { Route as TradeOfferIdRouteImport } from './routes/trade.$offerId'
 import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth/logout'
@@ -32,6 +33,11 @@ const CookiePolicyRoute = CookiePolicyRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsOfUseRoute = TermsOfUseRouteImport.update({
+  id: '/terms-of-use',
+  path: '/terms-of-use',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OffersOfferIdRoute = OffersOfferIdRouteImport.update({
@@ -69,6 +75,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cookie-policy': typeof CookiePolicyRoute
   '/login': typeof LoginRoute
+  '/terms-of-use': typeof TermsOfUseRoute
   '/offers/$offerId': typeof OffersOfferIdRoute
   '/trade/$offerId': typeof TradeOfferIdRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
@@ -80,6 +87,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cookie-policy': typeof CookiePolicyRoute
   '/login': typeof LoginRoute
+  '/terms-of-use': typeof TermsOfUseRoute
   '/offers/$offerId': typeof OffersOfferIdRoute
   '/trade/$offerId': typeof TradeOfferIdRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
@@ -92,6 +100,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/cookie-policy': typeof CookiePolicyRoute
   '/login': typeof LoginRoute
+  '/terms-of-use': typeof TermsOfUseRoute
   '/offers/$offerId': typeof OffersOfferIdRoute
   '/trade/$offerId': typeof TradeOfferIdRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
@@ -105,6 +114,7 @@ export interface FileRouteTypes {
     | '/'
     | '/cookie-policy'
     | '/login'
+    | '/terms-of-use'
     | '/offers/$offerId'
     | '/trade/$offerId'
     | '/api/auth/logout'
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/'
     | '/cookie-policy'
     | '/login'
+    | '/terms-of-use'
     | '/offers/$offerId'
     | '/trade/$offerId'
     | '/api/auth/logout'
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '/'
     | '/cookie-policy'
     | '/login'
+    | '/terms-of-use'
     | '/offers/$offerId'
     | '/trade/$offerId'
     | '/api/auth/logout'
@@ -139,6 +151,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CookiePolicyRoute: typeof CookiePolicyRoute
   LoginRoute: typeof LoginRoute
+  TermsOfUseRoute: typeof TermsOfUseRoute
   OffersOfferIdRoute: typeof OffersOfferIdRoute
   TradeOfferIdRoute: typeof TradeOfferIdRoute
   ApiAuthLogoutRoute: typeof ApiAuthLogoutRoute
@@ -168,6 +181,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms-of-use': {
+      id: '/terms-of-use'
+      path: '/terms-of-use'
+      fullPath: '/terms-of-use'
+      preLoaderRoute: typeof TermsOfUseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/offers/$offerId': {
@@ -219,6 +239,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CookiePolicyRoute: CookiePolicyRoute,
   LoginRoute: LoginRoute,
+  TermsOfUseRoute: TermsOfUseRoute,
   OffersOfferIdRoute: OffersOfferIdRoute,
   TradeOfferIdRoute: TradeOfferIdRoute,
   ApiAuthLogoutRoute: ApiAuthLogoutRoute,
@@ -229,13 +250,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
