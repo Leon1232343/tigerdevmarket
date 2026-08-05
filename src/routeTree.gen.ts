@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CookiePolicyRouteImport } from './routes/cookie-policy'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as OffersOfferIdRouteImport } from './routes/offers.$offerId'
 import { Route as TradeOfferIdRouteImport } from './routes/trade.$offerId'
@@ -21,6 +22,11 @@ import { Route as ApiAuthDiscordLoginRouteImport } from './routes/api/auth/disco
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CookiePolicyRoute = CookiePolicyRouteImport.update({
+  id: '/cookie-policy',
+  path: '/cookie-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -61,6 +67,7 @@ const ApiAuthDiscordLoginRoute = ApiAuthDiscordLoginRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/cookie-policy': typeof CookiePolicyRoute
   '/login': typeof LoginRoute
   '/offers/$offerId': typeof OffersOfferIdRoute
   '/trade/$offerId': typeof TradeOfferIdRoute
@@ -71,6 +78,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/cookie-policy': typeof CookiePolicyRoute
   '/login': typeof LoginRoute
   '/offers/$offerId': typeof OffersOfferIdRoute
   '/trade/$offerId': typeof TradeOfferIdRoute
@@ -82,6 +90,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/cookie-policy': typeof CookiePolicyRoute
   '/login': typeof LoginRoute
   '/offers/$offerId': typeof OffersOfferIdRoute
   '/trade/$offerId': typeof TradeOfferIdRoute
@@ -94,6 +103,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/cookie-policy'
     | '/login'
     | '/offers/$offerId'
     | '/trade/$offerId'
@@ -104,6 +114,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/cookie-policy'
     | '/login'
     | '/offers/$offerId'
     | '/trade/$offerId'
@@ -114,6 +125,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/cookie-policy'
     | '/login'
     | '/offers/$offerId'
     | '/trade/$offerId'
@@ -125,6 +137,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CookiePolicyRoute: typeof CookiePolicyRoute
   LoginRoute: typeof LoginRoute
   OffersOfferIdRoute: typeof OffersOfferIdRoute
   TradeOfferIdRoute: typeof TradeOfferIdRoute
@@ -141,6 +154,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cookie-policy': {
+      id: '/cookie-policy'
+      path: '/cookie-policy'
+      fullPath: '/cookie-policy'
+      preLoaderRoute: typeof CookiePolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -197,6 +217,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CookiePolicyRoute: CookiePolicyRoute,
   LoginRoute: LoginRoute,
   OffersOfferIdRoute: OffersOfferIdRoute,
   TradeOfferIdRoute: TradeOfferIdRoute,
