@@ -9,7 +9,7 @@ import type { Offer, OfferSource, PostType } from "@/lib/market-data";
  * Serverless runtimes cannot keep TCP sockets alive between requests, so a
  * module-level pool hangs on reuse. Open a short-lived client per query instead.
  */
-async function query<T>(sql: string, params: unknown[] = []): Promise<T[]> {
+export async function query<T>(sql: string, params: unknown[] = []): Promise<T[]> {
   const connectionString = process.env["TIGER_MARKET_DB_URL"];
   if (!connectionString) throw new Error("TIGER_MARKET_DB_URL is not configured");
   const client = new Client({
