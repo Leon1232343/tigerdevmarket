@@ -145,25 +145,34 @@ function HomePage() {
               onSubmit={(event) => {
                 event.preventDefault();
                 setPage(1);
+                setSmartTerm(query.trim());
+                document.getElementById("offers")?.scrollIntoView({ behavior: "smooth" });
               }}
               role="search"
             >
               <label htmlFor="hero-search" className="sr-only">
-                Search offers by keyword
+                Ask for what you need — AI smart search
               </label>
               <input
                 id="hero-search"
                 type="search"
                 name="q"
                 className="field sm:h-11"
-                placeholder="Search offers — e.g. combat system, UI kit, animator"
+                placeholder="Ask anything — e.g. cheap builder for a tycoon game"
                 value={query}
-                onChange={(event) => reset(() => setQuery(event.target.value))}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setPage(1);
+                }}
               />
-              <a href="#offers" className="btn-accent sm:h-11 sm:px-6">
-                Search
-              </a>
+              <button type="submit" className="btn-accent sm:h-11 sm:px-6">
+                {smartFetching ? "Thinking…" : "Smart search"}
+              </button>
             </form>
+            <p className="mt-3 text-xs text-muted-foreground">
+              AI understands your question and searches all offers semantically.
+            </p>
+
 
             <p className="mt-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
               <span className="font-mono text-foreground/80">
