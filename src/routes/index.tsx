@@ -297,7 +297,12 @@ function HomePage() {
                 id="filter-category"
                 className="field"
                 value={category}
-                onChange={(event) => reset(() => setCategory(event.target.value))}
+                onChange={(event) =>
+                  reset(() => {
+                    setSmartTerm("");
+                    setCategory(event.target.value);
+                  })
+                }
               >
                 <option value="all">All categories</option>
                 {overview.categories.map((cat) => (
@@ -315,7 +320,12 @@ function HomePage() {
                 id="filter-type"
                 className="field"
                 value={postType}
-                onChange={(event) => reset(() => setPostType(event.target.value))}
+                onChange={(event) =>
+                  reset(() => {
+                    setSmartTerm("");
+                    setPostType(event.target.value);
+                  })
+                }
               >
                 <option value="all">All post types</option>
                 {POST_TYPES.map((type) => (
@@ -333,11 +343,17 @@ function HomePage() {
                 id="filter-search"
                 type="search"
                 className="field"
-                placeholder="Search offers…"
+                placeholder="Keyword search…"
                 value={query}
-                onChange={(event) => reset(() => setQuery(event.target.value))}
+                onChange={(event) =>
+                  reset(() => {
+                    setSmartTerm("");
+                    setQuery(event.target.value);
+                  })
+                }
               />
             </div>
+
           </div>
 
           {offers.length > 0 ? (
