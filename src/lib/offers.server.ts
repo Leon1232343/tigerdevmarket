@@ -315,3 +315,15 @@ export async function getMarketOverview() {
     })),
   };
 }
+
+export async function getAllOfferIds(): Promise<{ offerId: string; postedAt: string | null }[]> {
+  const rows = await query<{ offer_id: number; timestamp: Date | string | null }>(
+    `SELECT offer_id, timestamp FROM offers
+      WHERE message_content IS NOT NULL AND length(message_content) > 20
+      ORDER BY timestamp DESC NULLS LAST`,
+  );
+  return rows.map((row) => ({
+    offerId: String(row.offer_id),
+    postedAt: row.timestamp ? new Date(row.timestamp).toISOString() : null,
+  }));
+}
