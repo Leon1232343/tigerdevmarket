@@ -234,11 +234,59 @@ function HomePage() {
         {/* Offer listing grid */}
         <section id="offers" className="mx-auto max-w-6xl scroll-mt-20 px-4 pb-20 sm:px-6">
           <div className="flex flex-wrap items-end justify-between gap-2">
-            <h2 className="text-2xl font-semibold sm:text-3xl">Latest offers</h2>
+            <h2 className="text-2xl font-semibold sm:text-3xl">
+              {smartActive ? "Smart search results" : "Latest offers"}
+            </h2>
             <p className="font-mono text-xs text-muted-foreground">
               {(data?.total ?? 0).toLocaleString("en-US")} matching
             </p>
           </div>
+
+          {smartActive && (
+            <div className="surface mt-4 flex flex-wrap items-center gap-2 p-4 text-xs">
+              <span className="text-muted-foreground">
+                {smartError
+                  ? "Smart search unavailable — showing keyword results."
+                  : smartFetching && !interpretation
+                    ? "AI is reading your question…"
+                    : "AI understood:"}
+              </span>
+              {interpretation?.category && <span className="chip">{interpretation.category}</span>}
+              {interpretation?.postType && (
+                <span className="chip">
+                  {POST_TYPES.find((t) => t.value === interpretation.postType)?.label ??
+                    interpretation.postType}
+                </span>
+              )}
+              {interpretation?.verifiedOnly && <span className="chip">Verified sellers</span>}
+              {interpretation?.maxPrice != null && (
+                <span className="chip font-mono">
+                  ≤ R$ {interpretation.maxPrice.toLocaleString("en-US")}
+                </span>
+              )}
+              {interpretation?.keywords.map((keyword) => (
+                <span key={keyword} className="chip">
+                  {keyword}
+                </span>
+              ))}
+              {smartData?.mode === "keyword" && !smartError && (
+                <span className="text-muted-foreground">(keyword match)</span>
+              )}
+              <button
+                type="button"
+                className="btn-ghost ml-auto"
+                onClick={() =>
+                  reset(() => {
+                    setSmartTerm("");
+                    setQuery("");
+                  })
+                }
+              >
+                Clear smart search
+              </button>
+            </div>
+          )}
+
 
           <div className="surface mt-6 grid gap-3 p-4 sm:grid-cols-3">
             <div>
