@@ -35,7 +35,7 @@ export const Route = createFileRoute("/sitemap.xml")({
         for (const { offerId, postedAt } of offerIds) {
           entries.push({
             path: `/offers/${offerId}`,
-            lastmod: postedAt ?? undefined,
+            lastmod: postedAt || undefined,
             changefreq: "weekly",
             priority: "0.6",
           });
