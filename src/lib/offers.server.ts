@@ -68,7 +68,7 @@ export type OfferRow = {
 export type OfferDTO = Offer;
 
 
-const POST_TYPE_MAP: Record<string, PostType> = {
+export const POST_TYPE_MAP: Record<string, PostType> = {
   "for hire": "forhire",
   hiring: "hiring",
   "hiring agent": "hiring",
@@ -188,7 +188,7 @@ export function mapOffer(row: OfferRow): OfferDTO {
   };
 }
 
-const SELECT_COLUMNS = `
+export const SELECT_COLUMNS = `
   o.offer_id, o.seller_username, o.seller_id, o.service_type, o.category, o.post_type,
   o.price_display, o.price_min, o.price_max, o.payment_method, o.message_content,
   o.description, o.jump_link, o.image_url, o.rating_score, o.is_pinned, o.source,
@@ -198,7 +198,7 @@ const SELECT_COLUMNS = `
   r.avg_score
 `;
 
-const JOINS = `
+export const JOINS = `
   LEFT JOIN verified_users v ON v.user_id = o.seller_id
   LEFT JOIN (
     SELECT offer_id, COUNT(*)::int AS review_count, AVG(score)::real AS avg_score
