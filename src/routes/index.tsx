@@ -86,19 +86,35 @@ function HomePage() {
   const [category, setCategory] = useState("all");
   const [postType, setPostType] = useState("all");
   const [query, setQuery] = useState("");
+  const [smartTerm, setSmartTerm] = useState("");
   const [page, setPage] = useState(1);
 
   const isDefaultView = category === "all" && postType === "all" && query === "" && page === 1;
+  const smartActive = smartTerm.trim().length > 0;
 
   const { data: overview } = useQuery({ ...overviewQuery, initialData: initialOverview });
-  const { data, isFetching } = useQuery({
+  const { data: browseData, isFetching: browseFetching } = useQuery({
     ...offersQuery({ category, postType, search: query, page, perPage: PER_PAGE }),
     ...(isDefaultView ? { initialData: initialOffers } : {}),
+    enabled: !smartActive,
+    placeholderData: (previous) => previous,
+  });
+  const {
+    data: smartData,
+    isFetching: smartFetching,
+    error: smartError,
+  } = useQuery({
+    ...smartQueryOptions(smartTerm, page),
     placeholderData: (previous) => previous,
   });
 
+  const data = smartActive ? smartData : browseData;
+  const isFetching = smartActive ? smartFetching : browseFetching;
+  const interpretation = smartActive ? smartData?.interpretation : undefined;
+
   const offers = data?.offers ?? [];
   const totalPages = data?.totalPages ?? 1;
+
 
   const maxListings = Math.max(...overview.categories.map((cat) => cat.listings), 1);
 
