@@ -6,6 +6,7 @@ import { SiteFooter } from "@/components/market/SiteFooter";
 import { OfferCard } from "@/components/market/OfferCard";
 import { POST_TYPES } from "@/lib/market-data";
 import { fetchMarketOverview, fetchOffers, type OfferListInput } from "@/lib/offers.functions";
+import { smartSearch } from "@/lib/smart-search.functions";
 
 const overviewQuery = queryOptions({
   queryKey: ["market-overview"],
@@ -22,6 +23,16 @@ function offersQuery(input: Required<OfferListInput>) {
     staleTime: 30_000,
   });
 }
+
+function smartQueryOptions(search: string, page: number) {
+  return queryOptions({
+    queryKey: ["smart-search", search, page],
+    queryFn: () => smartSearch({ data: { search, page, perPage: PER_PAGE } }),
+    enabled: search.trim().length > 0,
+    staleTime: 60_000,
+  });
+}
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -75,19 +86,35 @@ function HomePage() {
   const [category, setCategory] = useState("all");
   const [postType, setPostType] = useState("all");
   const [query, setQuery] = useState("");
+  const [smartTerm, setSmartTerm] = useState("");
   const [page, setPage] = useState(1);
 
   const isDefaultView = category === "all" && postType === "all" && query === "" && page === 1;
+  const smartActive = smartTerm.trim().length > 0;
 
   const { data: overview } = useQuery({ ...overviewQuery, initialData: initialOverview });
-  const { data, isFetching } = useQuery({
+  const { data: browseData, isFetching: browseFetching } = useQuery({
     ...offersQuery({ category, postType, search: query, page, perPage: PER_PAGE }),
     ...(isDefaultView ? { initialData: initialOffers } : {}),
+    enabled: !smartActive,
+    placeholderData: (previous) => previous,
+  });
+  const {
+    data: smartData,
+    isFetching: smartFetching,
+    error: smartError,
+  } = useQuery({
+    ...smartQueryOptions(smartTerm, page),
     placeholderData: (previous) => previous,
   });
 
+  const data = smartActive ? smartData : browseData;
+  const isFetching = smartActive ? smartFetching : browseFetching;
+  const interpretation = smartActive ? smartData?.interpretation : undefined;
+
   const offers = data?.offers ?? [];
   const totalPages = data?.totalPages ?? 1;
+
 
   const maxListings = Math.max(...overview.categories.map((cat) => cat.listings), 1);
 
@@ -118,25 +145,34 @@ function HomePage() {
               onSubmit={(event) => {
                 event.preventDefault();
                 setPage(1);
+                setSmartTerm(query.trim());
+                document.getElementById("offers")?.scrollIntoView({ behavior: "smooth" });
               }}
               role="search"
             >
               <label htmlFor="hero-search" className="sr-only">
-                Search offers by keyword
+                Ask for what you need — AI smart search
               </label>
               <input
                 id="hero-search"
                 type="search"
                 name="q"
                 className="field sm:h-11"
-                placeholder="Search offers — e.g. combat system, UI kit, animator"
+                placeholder="Ask anything — e.g. cheap builder for a tycoon game"
                 value={query}
-                onChange={(event) => reset(() => setQuery(event.target.value))}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setPage(1);
+                }}
               />
-              <a href="#offers" className="btn-accent sm:h-11 sm:px-6">
-                Search
-              </a>
+              <button type="submit" className="btn-accent sm:h-11 sm:px-6">
+                {smartFetching ? "Thinking…" : "Smart search"}
+              </button>
             </form>
+            <p className="mt-3 text-xs text-muted-foreground">
+              AI understands your question and searches all offers semantically.
+            </p>
+
 
             <p className="mt-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
               <span className="font-mono text-foreground/80">
@@ -198,11 +234,59 @@ function HomePage() {
         {/* Offer listing grid */}
         <section id="offers" className="mx-auto max-w-6xl scroll-mt-20 px-4 pb-20 sm:px-6">
           <div className="flex flex-wrap items-end justify-between gap-2">
-            <h2 className="text-2xl font-semibold sm:text-3xl">Latest offers</h2>
+            <h2 className="text-2xl font-semibold sm:text-3xl">
+              {smartActive ? "Smart search results" : "Latest offers"}
+            </h2>
             <p className="font-mono text-xs text-muted-foreground">
               {(data?.total ?? 0).toLocaleString("en-US")} matching
             </p>
           </div>
+
+          {smartActive && (
+            <div className="surface mt-4 flex flex-wrap items-center gap-2 p-4 text-xs">
+              <span className="text-muted-foreground">
+                {smartError
+                  ? "Smart search unavailable — showing keyword results."
+                  : smartFetching && !interpretation
+                    ? "AI is reading your question…"
+                    : "AI understood:"}
+              </span>
+              {interpretation?.category && <span className="chip">{interpretation.category}</span>}
+              {interpretation?.postType && (
+                <span className="chip">
+                  {POST_TYPES.find((t) => t.value === interpretation.postType)?.label ??
+                    interpretation.postType}
+                </span>
+              )}
+              {interpretation?.verifiedOnly && <span className="chip">Verified sellers</span>}
+              {interpretation?.maxPrice != null && (
+                <span className="chip font-mono">
+                  ≤ R$ {interpretation.maxPrice.toLocaleString("en-US")}
+                </span>
+              )}
+              {interpretation?.keywords.map((keyword) => (
+                <span key={keyword} className="chip">
+                  {keyword}
+                </span>
+              ))}
+              {smartData?.mode === "keyword" && !smartError && (
+                <span className="text-muted-foreground">(keyword match)</span>
+              )}
+              <button
+                type="button"
+                className="btn-ghost ml-auto"
+                onClick={() =>
+                  reset(() => {
+                    setSmartTerm("");
+                    setQuery("");
+                  })
+                }
+              >
+                Clear smart search
+              </button>
+            </div>
+          )}
+
 
           <div className="surface mt-6 grid gap-3 p-4 sm:grid-cols-3">
             <div>
@@ -213,7 +297,12 @@ function HomePage() {
                 id="filter-category"
                 className="field"
                 value={category}
-                onChange={(event) => reset(() => setCategory(event.target.value))}
+                onChange={(event) =>
+                  reset(() => {
+                    setSmartTerm("");
+                    setCategory(event.target.value);
+                  })
+                }
               >
                 <option value="all">All categories</option>
                 {overview.categories.map((cat) => (
@@ -231,7 +320,12 @@ function HomePage() {
                 id="filter-type"
                 className="field"
                 value={postType}
-                onChange={(event) => reset(() => setPostType(event.target.value))}
+                onChange={(event) =>
+                  reset(() => {
+                    setSmartTerm("");
+                    setPostType(event.target.value);
+                  })
+                }
               >
                 <option value="all">All post types</option>
                 {POST_TYPES.map((type) => (
@@ -249,11 +343,17 @@ function HomePage() {
                 id="filter-search"
                 type="search"
                 className="field"
-                placeholder="Search offers…"
+                placeholder="Keyword search…"
                 value={query}
-                onChange={(event) => reset(() => setQuery(event.target.value))}
+                onChange={(event) =>
+                  reset(() => {
+                    setSmartTerm("");
+                    setQuery(event.target.value);
+                  })
+                }
               />
             </div>
+
           </div>
 
           {offers.length > 0 ? (
