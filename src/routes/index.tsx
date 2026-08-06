@@ -6,6 +6,7 @@ import { SiteFooter } from "@/components/market/SiteFooter";
 import { OfferCard } from "@/components/market/OfferCard";
 import { POST_TYPES } from "@/lib/market-data";
 import { fetchMarketOverview, fetchOffers, type OfferListInput } from "@/lib/offers.functions";
+import { smartSearch } from "@/lib/smart-search.functions";
 
 const overviewQuery = queryOptions({
   queryKey: ["market-overview"],
@@ -22,6 +23,16 @@ function offersQuery(input: Required<OfferListInput>) {
     staleTime: 30_000,
   });
 }
+
+function smartQueryOptions(search: string, page: number) {
+  return queryOptions({
+    queryKey: ["smart-search", search, page],
+    queryFn: () => smartSearch({ data: { search, page, perPage: PER_PAGE } }),
+    enabled: search.trim().length > 0,
+    staleTime: 60_000,
+  });
+}
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
