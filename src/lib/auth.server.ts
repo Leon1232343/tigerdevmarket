@@ -19,6 +19,7 @@ const SCOPES = "identify";
 
 export type SessionUser = {
   publicId: string;
+  discordId: string;
   username: string;
   displayName: string | null;
   avatarUrl: string | null;
@@ -284,7 +285,7 @@ export async function getUserBySessionToken(token: string): Promise<SessionUser 
   const { data, error } = await db
     .from("sessions")
     .select(
-      "id, expires_at, users!inner(id, public_id, username, display_name, avatar_url, banner_url)",
+      "id, expires_at, users!inner(id, public_id, discord_id, username, display_name, avatar_url, banner_url)",
     )
     .eq("token_hash", hashToken(token))
     .maybeSingle();
@@ -301,6 +302,7 @@ export async function getUserBySessionToken(token: string): Promise<SessionUser 
 
   return {
     publicId: user.public_id,
+    discordId: user.discord_id,
     username: user.username,
     displayName: user.display_name,
     avatarUrl: user.avatar_url,
