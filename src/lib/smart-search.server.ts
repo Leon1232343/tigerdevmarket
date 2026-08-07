@@ -326,20 +326,30 @@ export async function indexPendingOffers(limit = 50): Promise<number> {
   if (rows.length === 0) return 0;
 
   const embeddings = await embedTexts(rows.map((row) => embeddingInput(row)));
-  let written = 0;
+
+  // One bulk INSERT — each `query()` opens a fresh connection, so per-row
+  // inserts made this far too slow to run inside a request.
+  const values: unknown[] = [EMBEDDING_MODEL];
+  const tuples: string[] = [];
   for (let i = 0; i < rows.length; i += 1) {
     const embedding = embeddings[i];
     const row = rows[i];
     if (!embedding || !row) continue;
-    await query(
-      `INSERT INTO offer_embeddings (offer_id, model, content_hash, embedding, updated_at)
-       VALUES ($1, $2, md5($3), $4::vector(${EMBEDDING_DIMS}), now())
-       ON CONFLICT (offer_id) DO UPDATE
-         SET model = EXCLUDED.model, content_hash = EXCLUDED.content_hash,
-             embedding = EXCLUDED.embedding, updated_at = now()`,
-      [row.offer_id, EMBEDDING_MODEL, embeddingInput(row), toVectorLiteral(embedding)],
+    values.push(row.offer_id, embeddingInput(row), toVectorLiteral(embedding));
+    const base = values.length - 3;
+    tuples.push(
+      `($${base + 1}::bigint, $1, md5($${base + 2}), $${base + 3}::vector(${EMBEDDING_DIMS}), now())`,
     );
-    written += 1;
   }
-  return written;
+  if (tuples.length === 0) return 0;
+
+  await query(
+    `INSERT INTO offer_embeddings (offer_id, model, content_hash, embedding, updated_at)
+     VALUES ${tuples.join(", ")}
+     ON CONFLICT (offer_id) DO UPDATE
+       SET model = EXCLUDED.model, content_hash = EXCLUDED.content_hash,
+           embedding = EXCLUDED.embedding, updated_at = now()`,
+    values,
+  );
+  return tuples.length;
 }

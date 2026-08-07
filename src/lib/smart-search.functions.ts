@@ -15,11 +15,9 @@ export const smartSearch = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const { smartSearchOffers, indexPendingOffers } = await import("@/lib/smart-search.server");
     const result = await smartSearchOffers(data);
-    // Keep the semantic index fresh for newly synced offers.
-    try {
-      await indexPendingOffers(25);
-    } catch (error) {
+    // Keep the semantic index fresh, but never make the user wait for it.
+    void indexPendingOffers(10).catch((error) => {
       console.error("Smart search index top-up failed", error);
-    }
+    });
     return result;
   });
