@@ -33,7 +33,11 @@ export function SiteNav() {
           <a href="/#offers" className="transition-colors hover:text-foreground">
             Offers
           </a>
+          <Link to="/post-offer" className="transition-colors hover:text-foreground">
+            Post an offer
+          </Link>
         </div>
+
 
         {user ? (
           <div className="flex items-center gap-3">

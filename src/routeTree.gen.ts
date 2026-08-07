@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CookiePolicyRouteImport } from './routes/cookie-policy'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as PostOfferRouteImport } from './routes/post-offer'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TermsOfUseRouteImport } from './routes/terms-of-use'
 import { Route as OffersOfferIdRouteImport } from './routes/offers.$offerId'
@@ -34,6 +35,11 @@ const CookiePolicyRoute = CookiePolicyRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PostOfferRoute = PostOfferRouteImport.update({
+  id: '/post-offer',
+  path: '/post-offer',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cookie-policy': typeof CookiePolicyRoute
   '/login': typeof LoginRoute
+  '/post-offer': typeof PostOfferRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-of-use': typeof TermsOfUseRoute
   '/offers/$offerId': typeof OffersOfferIdRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cookie-policy': typeof CookiePolicyRoute
   '/login': typeof LoginRoute
+  '/post-offer': typeof PostOfferRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-of-use': typeof TermsOfUseRoute
   '/offers/$offerId': typeof OffersOfferIdRoute
@@ -108,6 +116,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/cookie-policy': typeof CookiePolicyRoute
   '/login': typeof LoginRoute
+  '/post-offer': typeof PostOfferRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-of-use': typeof TermsOfUseRoute
   '/offers/$offerId': typeof OffersOfferIdRoute
@@ -123,6 +132,7 @@ export interface FileRouteTypes {
     | '/'
     | '/cookie-policy'
     | '/login'
+    | '/post-offer'
     | '/sitemap.xml'
     | '/terms-of-use'
     | '/offers/$offerId'
@@ -136,6 +146,7 @@ export interface FileRouteTypes {
     | '/'
     | '/cookie-policy'
     | '/login'
+    | '/post-offer'
     | '/sitemap.xml'
     | '/terms-of-use'
     | '/offers/$offerId'
@@ -149,6 +160,7 @@ export interface FileRouteTypes {
     | '/'
     | '/cookie-policy'
     | '/login'
+    | '/post-offer'
     | '/sitemap.xml'
     | '/terms-of-use'
     | '/offers/$offerId'
@@ -163,6 +175,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CookiePolicyRoute: typeof CookiePolicyRoute
   LoginRoute: typeof LoginRoute
+  PostOfferRoute: typeof PostOfferRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsOfUseRoute: typeof TermsOfUseRoute
   OffersOfferIdRoute: typeof OffersOfferIdRoute
@@ -194,6 +207,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/post-offer': {
+      id: '/post-offer'
+      path: '/post-offer'
+      fullPath: '/post-offer'
+      preLoaderRoute: typeof PostOfferRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -259,6 +279,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CookiePolicyRoute: CookiePolicyRoute,
   LoginRoute: LoginRoute,
+  PostOfferRoute: PostOfferRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsOfUseRoute: TermsOfUseRoute,
   OffersOfferIdRoute: OffersOfferIdRoute,
@@ -271,13 +292,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
