@@ -7,6 +7,7 @@ import { OfferCard } from "@/components/market/OfferCard";
 import { POST_TYPES } from "@/lib/market-data";
 import { fetchMarketOverview, fetchOffers, type OfferListInput } from "@/lib/offers.functions";
 import { smartSearch } from "@/lib/smart-search.functions";
+import { SITE_URL, socialImageMeta } from "@/lib/site";
 
 const overviewQuery = queryOptions({
   queryKey: ["market-overview"],
@@ -50,7 +51,26 @@ export const Route = createFileRoute("/")({
           "Browse live offers for Roblox scripting, building, UI design, 3D modeling, GFX and animation work.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: SITE_URL + "/" },
       { name: "twitter:card", content: "summary_large_image" },
+      ...socialImageMeta,
+    ],
+    links: [{ rel: "canonical", href: SITE_URL + "/" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "Tiger Market",
+          url: SITE_URL + "/",
+          potentialAction: {
+            "@type": "SearchAction",
+            target: SITE_URL + "/?q={search_term_string}",
+            "query-input": "required name=search_term_string",
+          },
+        }),
+      },
     ],
   }),
   loader: async ({ context }) => {

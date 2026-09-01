@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { SITE_URL, breadcrumbJsonLd, socialImageMeta } from "@/lib/site";
 
 export const Route = createFileRoute("/cookie-policy")({
   component: CookiePolicyPage,
@@ -17,7 +18,16 @@ export const Route = createFileRoute("/cookie-policy")({
           "Cookie Policy for Tiger Dev Market. Learn how we use cookies and similar technologies on our website.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: SITE_URL + "/cookie-policy" },
+      ...socialImageMeta,
       { name: "twitter:card", content: "summary" },
+    ],
+    links: [{ rel: "canonical", href: SITE_URL + "/cookie-policy" }],
+    scripts: [
+      breadcrumbJsonLd([
+        { name: "Offers", path: "/" },
+        { name: "Cookie Policy", path: "/cookie-policy" },
+      ]),
     ],
   }),
 });

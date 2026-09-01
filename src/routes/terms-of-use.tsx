@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { SITE_URL, breadcrumbJsonLd, socialImageMeta } from "@/lib/site";
 
 export const Route = createFileRoute("/terms-of-use")({
   component: TermsOfUsePage,
@@ -9,7 +10,16 @@ export const Route = createFileRoute("/terms-of-use")({
       { property: "og:title", content: "Terms of Use — Tiger Dev Market" },
       { property: "og:description", content: "Terms of Use for Tiger Dev Market. Read our legal terms and conditions before using the Services." },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: SITE_URL + "/terms-of-use" },
+      ...socialImageMeta,
       { name: "twitter:card", content: "summary" },
+    ],
+    links: [{ rel: "canonical", href: SITE_URL + "/terms-of-use" }],
+    scripts: [
+      breadcrumbJsonLd([
+        { name: "Offers", path: "/" },
+        { name: "Terms of Use", path: "/terms-of-use" },
+      ]),
     ],
   }),
 });

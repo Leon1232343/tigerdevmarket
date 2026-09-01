@@ -45,7 +45,7 @@ export function SiteNav() {
               {user.avatarUrl ? (
                 <img
                   src={user.avatarUrl}
-                  alt=""
+                  alt={`${user.displayName ?? user.username} profile picture`}
                   width={28}
                   height={28}
                   loading="lazy"
