@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { getAllOfferIds } from "@/lib/offers.server";
 
-const BASE_URL = "https://tiger-dev-hub.lovable.app";
+const BASE_URL = "https://tigerdevmarket.lovable.app";
 
 interface SitemapEntry {
   path: string;
@@ -26,9 +26,9 @@ export const Route = createFileRoute("/sitemap.xml")({
       GET: async () => {
         const entries: SitemapEntry[] = [
           { path: "/", changefreq: "daily", priority: "1.0" },
+          { path: "/post-offer", changefreq: "monthly", priority: "0.7" },
           { path: "/cookie-policy", changefreq: "monthly", priority: "0.3" },
           { path: "/terms-of-use", changefreq: "monthly", priority: "0.3" },
-          { path: "/login", changefreq: "monthly", priority: "0.3" },
         ];
 
         const offerIds = await getAllOfferIds();

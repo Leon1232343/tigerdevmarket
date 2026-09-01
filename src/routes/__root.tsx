@@ -17,22 +17,50 @@ import type { SessionUser } from "../lib/auth.server";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
+    <div className="flex min-h-screen flex-col bg-background">
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-4 py-16 sm:px-6">
+        <p className="font-mono text-xs text-muted-foreground">Error 404</p>
+        <h1 className="font-display mt-3 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+          This page doesn't exist
+        </h1>
+        <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
+          The offer may have been removed, or the link is mistyped. Here's where to go next on Tiger
+          Market.
         </p>
-        <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Go home
+
+        <div className="mt-8 grid gap-3 sm:grid-cols-2">
+          <Link to="/" className="surface surface-hover p-4 text-sm font-medium">
+            Browse all offers
+            <span className="mt-1 block text-xs font-normal text-muted-foreground">
+              Scripting, building, UI, 3D, GFX and animation
+            </span>
+          </Link>
+          <Link to="/post-offer" className="surface surface-hover p-4 text-sm font-medium">
+            Post an offer
+            <span className="mt-1 block text-xs font-normal text-muted-foreground">
+              List your own Roblox dev service
+            </span>
+          </Link>
+          <Link to="/terms-of-use" className="surface surface-hover p-4 text-sm font-medium">
+            Terms of Use
+            <span className="mt-1 block text-xs font-normal text-muted-foreground">
+              Rules for buying and selling
+            </span>
+          </Link>
+          <Link to="/cookie-policy" className="surface surface-hover p-4 text-sm font-medium">
+            Cookie Policy
+            <span className="mt-1 block text-xs font-normal text-muted-foreground">
+              How we use cookies
+            </span>
           </Link>
         </div>
-      </div>
+
+        <div className="mt-8">
+          <Link to="/" className="btn-accent">
+            Back to the marketplace
+          </Link>
+        </div>
+      </main>
     </div>
   );
 }

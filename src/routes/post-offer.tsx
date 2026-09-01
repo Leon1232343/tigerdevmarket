@@ -14,6 +14,8 @@ import {
   type PostOfferInput,
 } from "@/lib/post-offer-schema";
 import type { SessionUser } from "@/lib/auth.server";
+import { Breadcrumbs } from "@/components/market/Breadcrumbs";
+import { SITE_URL, breadcrumbJsonLd, socialImageMeta } from "@/lib/site";
 
 export const Route = createFileRoute("/post-offer")({
   head: () => ({
@@ -31,7 +33,16 @@ export const Route = createFileRoute("/post-offer")({
           "List your Roblox dev service or request on Tiger Market in under a minute — sign in with Discord and publish.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: SITE_URL + "/post-offer" },
       { name: "twitter:card", content: "summary_large_image" },
+      ...socialImageMeta,
+    ],
+    links: [{ rel: "canonical", href: SITE_URL + "/post-offer" }],
+    scripts: [
+      breadcrumbJsonLd([
+        { name: "Offers", path: "/" },
+        { name: "Post an offer", path: "/post-offer" },
+      ]),
     ],
   }),
   component: PostOfferPage,
@@ -79,7 +90,10 @@ function PostOfferPage() {
     setPending(true);
     try {
       const result = await submit({ data: form });
-      navigate({ to: "/offers/$offerId", params: { offerId: String(result.offerId) } });
+      navigate({
+        to: "/thank-you",
+        search: { kind: "offer", offerId: String(result.offerId) },
+      });
     } catch (error) {
       setErrors([error instanceof Error ? error.message : "Could not publish your offer."]);
     } finally {
@@ -92,12 +106,7 @@ function PostOfferPage() {
       <SiteNav />
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6 sm:py-14">
-        <p className="text-xs text-muted-foreground">
-          <Link to="/" className="transition-colors hover:text-foreground">
-            Offers
-          </Link>{" "}
-          / Post an offer
-        </p>
+        <Breadcrumbs items={[{ label: "Offers", to: "/" }, { label: "Post an offer" }]} />
         <h1 className="font-display mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
           Post your own offer
         </h1>

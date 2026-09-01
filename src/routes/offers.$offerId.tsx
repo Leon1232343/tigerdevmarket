@@ -5,6 +5,8 @@ import { Stars } from "@/components/market/Stars";
 import { postTypeClass, POST_TYPES, type Offer } from "@/lib/market-data";
 import { responsiveOfferImage } from "@/lib/offer-images";
 import { fetchOffer } from "@/lib/offers.functions";
+import { Breadcrumbs } from "@/components/market/Breadcrumbs";
+import { SITE_URL, breadcrumbJsonLd, socialImageMeta } from "@/lib/site";
 
 
 export const Route = createFileRoute("/offers/$offerId")({
@@ -24,7 +26,8 @@ export const Route = createFileRoute("/offers/$offerId")({
     </div>
   ),
 
-  head: ({ loaderData }) => {
+  head: ({ params, loaderData }) => {
+    const url = `${SITE_URL}/offers/${params.offerId}`;
     const title = loaderData?.offer
       ? `${loaderData.offer.title} — Tiger Market`
       : "Offer — Tiger Market";
@@ -36,6 +39,18 @@ export const Route = createFileRoute("/offers/$offerId")({
         { name: "description", content: description },
         { property: "og:title", content: title },
         { property: "og:description", content: description },
+        { property: "og:type", content: "article" },
+        { property: "og:url", content: url },
+        { name: "twitter:card", content: "summary_large_image" },
+        ...socialImageMeta,
+        ...(loaderData?.offer ? [] : [{ name: "robots", content: "noindex" }]),
+      ],
+      links: [{ rel: "canonical", href: url }],
+      scripts: [
+        breadcrumbJsonLd([
+          { name: "Offers", path: "/" },
+          { name: loaderData?.offer?.title ?? "Offer", path: `/offers/${params.offerId}` },
+        ]),
       ],
     };
   },
@@ -54,12 +69,13 @@ function OfferDetailPage() {
       <SiteNav />
 
       <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
-        <Link
-          to="/"
-          className="text-xs text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
-        >
-          ← Back to offers
-        </Link>
+        <Breadcrumbs
+          items={[
+            { label: "Offers", to: "/" },
+            { label: offer.category, to: "/" },
+            { label: offer.title },
+          ]}
+        />
 
         {offer.scamWarning && (
           <div

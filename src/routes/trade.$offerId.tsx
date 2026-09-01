@@ -31,6 +31,7 @@ export const Route = createFileRoute("/trade/$offerId")({
         property: "og:description",
         content: "Both parties confirm a completed Tiger Market trade here.",
       },
+      { name: "robots", content: "noindex" },
     ],
   }),
   component: TradeConfirmationPage,
@@ -90,13 +91,31 @@ function TradeConfirmationPage() {
               : "The other party has already confirmed."}
         </p>
 
-        <Link
-          to="/offers/$offerId"
-          params={{ offerId: offer.publicId }}
-          className="mt-6 block text-center text-xs text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
-        >
-          Back to offer
-        </Link>
+        {confirmed && counterpartyConfirmed && (
+          <Link
+            to="/thank-you"
+            search={{ kind: "trade", offerId: offer.publicId }}
+            className="btn-ghost mt-6 w-full justify-center"
+          >
+            Continue
+          </Link>
+        )}
+
+        <div className="mt-6 flex items-center justify-center gap-4 text-xs text-muted-foreground">
+          <Link
+            to="/offers/$offerId"
+            params={{ offerId: offer.publicId }}
+            className="underline-offset-4 transition-colors hover:text-foreground hover:underline"
+          >
+            Back to offer
+          </Link>
+          <Link
+            to="/"
+            className="underline-offset-4 transition-colors hover:text-foreground hover:underline"
+          >
+            Browse offers
+          </Link>
+        </div>
       </section>
     </main>
   );

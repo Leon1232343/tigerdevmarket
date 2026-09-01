@@ -27,7 +27,7 @@ export function OfferCard({ offer }: { offer: Offer }) {
               sizes="44px"
               width={image.width}
               height={image.height}
-              alt=""
+              alt={`${offer.title} — ${offer.category} offer by ${offer.seller}`}
               loading="lazy"
               decoding="async"
               className="h-11 w-11 shrink-0 rounded-md border border-border object-cover"
