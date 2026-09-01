@@ -12,11 +12,18 @@ import type { Offer, OfferSource, PostType } from "@/lib/market-data";
 export async function query<T>(sql: string, params: unknown[] = []): Promise<T[]> {
   const connectionString = process.env["TIGER_MARKET_DB_URL"];
   if (!connectionString) throw new Error("TIGER_MARKET_DB_URL is not configured");
+  // Parse manually: extra query params (e.g. channel_binding) break the driver,
+  // and the TLS handshake needs an explicit SNI servername.
+  const url = new URL(connectionString);
   const client = new Client({
-    connectionString,
-    ssl: { rejectUnauthorized: false },
-    connectionTimeoutMillis: 10_000,
-    query_timeout: 15_000,
+    host: url.hostname,
+    port: url.port ? Number(url.port) : 5432,
+    user: decodeURIComponent(url.username),
+    password: decodeURIComponent(url.password),
+    database: url.pathname.slice(1),
+    ssl: { rejectUnauthorized: false, servername: url.hostname },
+    connectionTimeoutMillis: 15_000,
+    query_timeout: 20_000,
   });
   await client.connect();
   try {
