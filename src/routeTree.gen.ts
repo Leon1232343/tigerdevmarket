@@ -15,6 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as PostOfferRouteImport } from './routes/post-offer'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TermsOfUseRouteImport } from './routes/terms-of-use'
+import { Route as ThankYouRouteImport } from './routes/thank-you'
 import { Route as OffersOfferIdRouteImport } from './routes/offers.$offerId'
 import { Route as TradeOfferIdRouteImport } from './routes/trade.$offerId'
 import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth/logout'
@@ -50,6 +51,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const TermsOfUseRoute = TermsOfUseRouteImport.update({
   id: '/terms-of-use',
   path: '/terms-of-use',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ThankYouRoute = ThankYouRouteImport.update({
+  id: '/thank-you',
+  path: '/thank-you',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OffersOfferIdRoute = OffersOfferIdRouteImport.update({
@@ -90,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/post-offer': typeof PostOfferRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-of-use': typeof TermsOfUseRoute
+  '/thank-you': typeof ThankYouRoute
   '/offers/$offerId': typeof OffersOfferIdRoute
   '/trade/$offerId': typeof TradeOfferIdRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
@@ -104,6 +111,7 @@ export interface FileRoutesByTo {
   '/post-offer': typeof PostOfferRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-of-use': typeof TermsOfUseRoute
+  '/thank-you': typeof ThankYouRoute
   '/offers/$offerId': typeof OffersOfferIdRoute
   '/trade/$offerId': typeof TradeOfferIdRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
@@ -119,6 +127,7 @@ export interface FileRoutesById {
   '/post-offer': typeof PostOfferRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-of-use': typeof TermsOfUseRoute
+  '/thank-you': typeof ThankYouRoute
   '/offers/$offerId': typeof OffersOfferIdRoute
   '/trade/$offerId': typeof TradeOfferIdRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
@@ -135,6 +144,7 @@ export interface FileRouteTypes {
     | '/post-offer'
     | '/sitemap.xml'
     | '/terms-of-use'
+    | '/thank-you'
     | '/offers/$offerId'
     | '/trade/$offerId'
     | '/api/auth/logout'
@@ -149,6 +159,7 @@ export interface FileRouteTypes {
     | '/post-offer'
     | '/sitemap.xml'
     | '/terms-of-use'
+    | '/thank-you'
     | '/offers/$offerId'
     | '/trade/$offerId'
     | '/api/auth/logout'
@@ -163,6 +174,7 @@ export interface FileRouteTypes {
     | '/post-offer'
     | '/sitemap.xml'
     | '/terms-of-use'
+    | '/thank-you'
     | '/offers/$offerId'
     | '/trade/$offerId'
     | '/api/auth/logout'
@@ -178,6 +190,7 @@ export interface RootRouteChildren {
   PostOfferRoute: typeof PostOfferRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsOfUseRoute: typeof TermsOfUseRoute
+  ThankYouRoute: typeof ThankYouRoute
   OffersOfferIdRoute: typeof OffersOfferIdRoute
   TradeOfferIdRoute: typeof TradeOfferIdRoute
   ApiAuthLogoutRoute: typeof ApiAuthLogoutRoute
@@ -228,6 +241,13 @@ declare module '@tanstack/react-router' {
       path: '/terms-of-use'
       fullPath: '/terms-of-use'
       preLoaderRoute: typeof TermsOfUseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/thank-you': {
+      id: '/thank-you'
+      path: '/thank-you'
+      fullPath: '/thank-you'
+      preLoaderRoute: typeof ThankYouRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/offers/$offerId': {
@@ -282,6 +302,7 @@ const rootRouteChildren: RootRouteChildren = {
   PostOfferRoute: PostOfferRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsOfUseRoute: TermsOfUseRoute,
+  ThankYouRoute: ThankYouRoute,
   OffersOfferIdRoute: OffersOfferIdRoute,
   TradeOfferIdRoute: TradeOfferIdRoute,
   ApiAuthLogoutRoute: ApiAuthLogoutRoute,
