@@ -7,6 +7,12 @@ export function SiteFooter() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-6">
           <p>🐯 Tiger Market — a marketplace for Roblox developers.</p>
           <Link
+            to="/about"
+            className="transition-colors hover:text-foreground"
+          >
+            About
+          </Link>
+          <Link
             to="/cookie-policy"
             className="transition-colors hover:text-foreground"
           >

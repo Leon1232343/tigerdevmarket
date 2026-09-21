@@ -36,6 +36,9 @@ export function SiteNav() {
           <Link to="/post-offer" className="transition-colors hover:text-foreground">
             Post an offer
           </Link>
+          <Link to="/about" className="transition-colors hover:text-foreground">
+            About
+          </Link>
         </div>
 
 
