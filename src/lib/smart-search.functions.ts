@@ -13,11 +13,6 @@ export const smartSearch = createServerFn({ method: "GET" })
     perPage: Number.isFinite(input?.perPage) ? Math.floor(Number(input?.perPage)) : 12,
   }))
   .handler(async ({ data }) => {
-    const { smartSearchOffers, indexPendingOffers } = await import("@/lib/smart-search.server");
-    const result = await smartSearchOffers(data);
-    // Keep the semantic index fresh, but never make the user wait for it.
-    void indexPendingOffers(10).catch((error) => {
-      console.error("Smart search index top-up failed", error);
-    });
-    return result;
+    const { smartSearchOffers } = await import("@/lib/smart-search.server");
+    return smartSearchOffers(data);
   });

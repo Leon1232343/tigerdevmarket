@@ -1,21 +1,20 @@
 /**
  * AI smart search over the external offers database.
- * Combines an embedding index (pgvector, table `offer_embeddings`) for semantic
- * recall with AI query understanding that extracts hard filters.
+ * Uses the Google Gemini API directly (free tier) to turn free-form text into
+ * structured marketplace filters, then matches offers with keyword search.
  * Server-only — never import from client code.
  */
 import { query, mapOffer, SELECT_COLUMNS, JOINS, POST_TYPE_MAP } from "@/lib/offers.server";
 import type { OfferRow } from "@/lib/offers.server";
 import type { Offer, PostType } from "@/lib/market-data";
 
-const GATEWAY = "https://ai.gateway.lovable.dev/v1";
-export const EMBEDDING_MODEL = "google/gemini-embedding-2";
-const CHAT_MODEL = "openai/gpt-5.6-sol";
-const EMBEDDING_DIMS = 3072;
+const GEMINI_API = "https://generativelanguage.googleapis.com/v1beta/models";
+// Free tier: highest request limits among current Gemini models.
+const CHAT_MODEL = "gemini-2.5-flash";
 
 function apiKey(): string {
-  const key = process.env["LOVABLE_API_KEY"];
-  if (!key) throw new Error("LOVABLE_API_KEY is not configured");
+  const key = process.env["GEMINI_API_KEY"];
+  if (!key) throw new Error("GEMINI_API_KEY is not configured");
   return key;
 }
 
@@ -50,45 +49,46 @@ const EMPTY_INTERPRETATION: Interpretation = {
   minPrice: null,
 };
 
-/** Ask the model to turn free-form text into structured marketplace filters. */
+/** Ask Gemini to turn free-form text into structured marketplace filters. */
 export async function interpretQuery(raw: string): Promise<Interpretation> {
   const text = raw.trim().slice(0, 300);
   if (!text) return EMPTY_INTERPRETATION;
 
-  const system = `You turn a Roblox developer marketplace search query into JSON filters.
+  const prompt = `You turn a Roblox developer marketplace search query into JSON filters.
 Allowed "category" values: ${CATEGORIES.join(", ")} or null.
 Allowed "postType" values: hiring, forhire, buying, selling, investment, or null.
 Return ONLY JSON with keys: semanticQuery (string, cleaned English description of what the user wants),
 keywords (array of up to 5 short lowercase terms), category, postType,
 verifiedOnly (boolean), minPrice (number in Robux or null), maxPrice (number in Robux or null).
-The query may be in any language; semanticQuery must be English.`;
+The query may be in any language; semanticQuery must be English.
+
+Query: ${text}`;
 
   try {
-    const response = await fetch(`${GATEWAY}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        Authorization: `Bearer ${apiKey()}`,
+    const response = await fetch(
+      `${GEMINI_API}/${CHAT_MODEL}:generateContent?key=${encodeURIComponent(apiKey())}`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: "application/json",
+            temperature: 0,
+            maxOutputTokens: 512,
+          },
+        }),
       },
-      body: JSON.stringify({
-        model: CHAT_MODEL,
-        reasoning_effort: "none",
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: text },
-        ],
-      }),
-    });
+    );
     if (!response.ok) {
       console.error(`Smart search interpret failed [${response.status}]: ${await response.text()}`);
       return { ...EMPTY_INTERPRETATION, semanticQuery: text };
     }
     const payload = (await response.json()) as {
-      choices?: { message?: { content?: string } }[];
+      candidates?: { content?: { parts?: { text?: string }[] } }[];
     };
-    const parsed = JSON.parse(payload.choices?.[0]?.message?.content ?? "{}") as
-      Partial<Interpretation>;
+    const content = payload.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
+    const parsed = JSON.parse(content) as Partial<Interpretation>;
 
     const category =
       typeof parsed.category === "string"
@@ -124,31 +124,6 @@ The query may be in any language; semanticQuery must be English.`;
   }
 }
 
-/** Embed one or more strings (max 100 per request for Gemini embeddings). */
-export async function embedTexts(inputs: string[]): Promise<number[][]> {
-  if (inputs.length === 0) return [];
-  const response = await fetch(`${GATEWAY}/embeddings`, {
-    method: "POST",
-    headers: { "content-type": "application/json", Authorization: `Bearer ${apiKey()}` },
-    body: JSON.stringify({ model: EMBEDDING_MODEL, input: inputs }),
-  });
-  if (!response.ok) {
-    throw new Error(`Embedding request failed [${response.status}]: ${await response.text()}`);
-  }
-  const payload = (await response.json()) as {
-    data?: { index: number; embedding: number[] }[];
-  };
-  const rows = (payload.data ?? []).slice().sort((a, b) => a.index - b.index);
-  return rows.map((row) => row.embedding);
-}
-
-function toVectorLiteral(embedding: number[]): string {
-  if (embedding.length !== EMBEDDING_DIMS) {
-    throw new Error(`Unexpected embedding size ${embedding.length}`);
-  }
-  return `[${embedding.join(",")}]`;
-}
-
 export type SmartSearchResult = {
   offers: Offer[];
   total: number;
@@ -156,7 +131,7 @@ export type SmartSearchResult = {
   perPage: number;
   totalPages: number;
   interpretation: Interpretation;
-  mode: "semantic" | "keyword";
+  mode: "keyword";
 };
 
 export async function smartSearchOffers(params: {
@@ -167,14 +142,6 @@ export async function smartSearchOffers(params: {
   const perPage = Math.min(Math.max(params.perPage ?? 12, 1), 48);
   const page = Math.max(params.page ?? 1, 1);
   const interpretation = await interpretQuery(params.search);
-
-  let embedding: number[] | null = null;
-  try {
-    const [vector] = await embedTexts([interpretation.semanticQuery || params.search]);
-    embedding = vector ?? null;
-  } catch (error) {
-    console.error("Smart search embedding error", error);
-  }
 
   const where: string[] = ["o.message_content IS NOT NULL", "length(o.message_content) > 20"];
   const values: unknown[] = [];
@@ -202,65 +169,29 @@ export async function smartSearchOffers(params: {
     where.push(`v.user_id IS NOT NULL`);
   }
 
-  if (embedding) {
-    values.push(toVectorLiteral(embedding));
-    const vectorIdx = values.length;
-    const whereSql = `WHERE ${where.join(" AND ")}`;
-    const rows = await query<OfferRow>(
-      `SELECT ${SELECT_COLUMNS} FROM offers o
-       ${JOINS}
-       JOIN offer_embeddings e ON e.offer_id = o.offer_id
-       ${whereSql}
-       ORDER BY e.embedding::halfvec(${EMBEDDING_DIMS}) <=> ($${vectorIdx}::vector(${EMBEDDING_DIMS}))::halfvec(${EMBEDDING_DIMS})
-       LIMIT $${vectorIdx + 1} OFFSET $${vectorIdx + 2}`,
-      [...values, perPage, (page - 1) * perPage],
-    );
-    const countRows = await query<{ total: string }>(
-      `SELECT COUNT(*)::text AS total FROM offers o
-        ${JOINS}
-        JOIN offer_embeddings e ON e.offer_id = o.offer_id
-        WHERE ${where.join(" AND ")}`,
-      values.slice(0, vectorIdx - 1),
-    );
-    const total = Number(countRows[0]?.total ?? 0);
-    if (rows.length > 0) {
-      return {
-        offers: rows.map(mapOffer),
-        total,
-        page,
-        perPage,
-        totalPages: Math.max(1, Math.ceil(total / perPage)),
-        interpretation,
-        mode: "semantic",
-      };
-    }
-  }
-
-  // Fallback: keyword search using the extracted terms.
+  // Keyword match using the terms Gemini extracted (or the raw query).
   const terms = interpretation.keywords.length > 0 ? interpretation.keywords : [params.search];
-  const kwValues = [...values.slice(0, values.length - (embedding ? 1 : 0))];
-  const kwWhere = [...where];
   const ors: string[] = [];
   for (const term of terms.filter(Boolean).slice(0, 5)) {
-    kwValues.push(`%${term}%`);
-    const idx = kwValues.length;
+    values.push(`%${term}%`);
+    const idx = values.length;
     ors.push(
       `(o.message_content ILIKE $${idx} OR o.category ILIKE $${idx} OR o.service_type ILIKE $${idx} OR o.seller_username ILIKE $${idx})`,
     );
   }
-  if (ors.length > 0) kwWhere.push(`(${ors.join(" OR ")})`);
-  const kwWhereSql = `WHERE ${kwWhere.join(" AND ")}`;
+  if (ors.length > 0) where.push(`(${ors.join(" OR ")})`);
+  const whereSql = `WHERE ${where.join(" AND ")}`;
 
   const countRows = await query<{ total: string }>(
-    `SELECT COUNT(*)::text AS total FROM offers o ${JOINS} ${kwWhereSql}`,
-    kwValues,
+    `SELECT COUNT(*)::text AS total FROM offers o ${JOINS} ${whereSql}`,
+    values,
   );
   const total = Number(countRows[0]?.total ?? 0);
   const rows = await query<OfferRow>(
-    `SELECT ${SELECT_COLUMNS} FROM offers o ${JOINS} ${kwWhereSql}
+    `SELECT ${SELECT_COLUMNS} FROM offers o ${JOINS} ${whereSql}
      ORDER BY o.is_pinned DESC NULLS LAST, o.timestamp DESC NULLS LAST
-     LIMIT $${kwValues.length + 1} OFFSET $${kwValues.length + 2}`,
-    [...kwValues, perPage, (page - 1) * perPage],
+     LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
+    [...values, perPage, (page - 1) * perPage],
   );
 
   return {
@@ -272,84 +203,4 @@ export async function smartSearchOffers(params: {
     interpretation,
     mode: "keyword",
   };
-}
-
-/** Text that gets embedded for an offer. */
-export function embeddingInput(row: {
-  message_content: string | null;
-  description: string | null;
-  category: string | null;
-  service_type: string | null;
-  post_type: string | null;
-  price_display: string | null;
-}): string {
-  return [
-    row.post_type ? `Post type: ${row.post_type}` : "",
-    row.category ? `Category: ${row.category}` : "",
-    row.service_type ? `Service: ${row.service_type}` : "",
-    row.price_display ? `Price: ${row.price_display}` : "",
-    (row.description ?? "").trim() || (row.message_content ?? "").trim(),
-  ]
-    .filter(Boolean)
-    .join("\n")
-    .slice(0, 4000);
-}
-
-type PendingRow = {
-  offer_id: number;
-  message_content: string | null;
-  description: string | null;
-  category: string | null;
-  service_type: string | null;
-  post_type: string | null;
-  price_display: string | null;
-};
-
-/**
- * Index offers that have no embedding yet (new Discord/website offers).
- * Called opportunistically after a search so the index stays fresh.
- */
-export async function indexPendingOffers(limit = 50): Promise<number> {
-  const batch = Math.min(Math.max(limit, 1), 100);
-  const rows = await query<PendingRow>(
-    `SELECT o.offer_id, o.message_content, o.description, o.category, o.service_type,
-            o.post_type, o.price_display
-       FROM offers o
-       LEFT JOIN offer_embeddings e ON e.offer_id = o.offer_id
-      WHERE e.offer_id IS NULL
-        AND o.message_content IS NOT NULL
-        AND length(o.message_content) > 20
-      ORDER BY o.timestamp DESC NULLS LAST
-      LIMIT $1`,
-    [batch],
-  );
-  if (rows.length === 0) return 0;
-
-  const embeddings = await embedTexts(rows.map((row) => embeddingInput(row)));
-
-  // One bulk INSERT — each `query()` opens a fresh connection, so per-row
-  // inserts made this far too slow to run inside a request.
-  const values: unknown[] = [EMBEDDING_MODEL];
-  const tuples: string[] = [];
-  for (let i = 0; i < rows.length; i += 1) {
-    const embedding = embeddings[i];
-    const row = rows[i];
-    if (!embedding || !row) continue;
-    values.push(row.offer_id, embeddingInput(row), toVectorLiteral(embedding));
-    const base = values.length - 3;
-    tuples.push(
-      `($${base + 1}::bigint, $1, md5($${base + 2}), $${base + 3}::vector(${EMBEDDING_DIMS}), now())`,
-    );
-  }
-  if (tuples.length === 0) return 0;
-
-  await query(
-    `INSERT INTO offer_embeddings (offer_id, model, content_hash, embedding, updated_at)
-     VALUES ${tuples.join(", ")}
-     ON CONFLICT (offer_id) DO UPDATE
-       SET model = EXCLUDED.model, content_hash = EXCLUDED.content_hash,
-           embedding = EXCLUDED.embedding, updated_at = now()`,
-    values,
-  );
-  return tuples.length;
 }
