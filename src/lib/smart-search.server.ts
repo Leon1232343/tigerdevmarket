@@ -9,8 +9,8 @@ import type { OfferRow } from "@/lib/offers.server";
 import type { Offer, PostType } from "@/lib/market-data";
 
 const GROQ_API = "https://api.groq.com/openai/v1/chat/completions";
-// Free tier: highest rate limits among Groq's production models.
-const CHAT_MODEL = "llama-3.3-70b-versatile";
+// Free tier: highest rate limits among Groq's current production models.
+const CHAT_MODEL = "openai/gpt-oss-120b";
 
 function apiKey(): string {
   const key = process.env["GROQ_API_KEY"];
