@@ -85,7 +85,8 @@ export const Route = createFileRoute("/")({
 
   errorComponent: ({ error }) => (
     <div role="alert" className="mx-auto max-w-xl px-4 py-24 text-center text-sm">
-      Could not load offers right now. {error.message}
+      Could not load offers right now.{" "}
+      {error instanceof Error ? error.message : "Please try again."}
     </div>
   ),
   notFoundComponent: () => <div className="px-4 py-24 text-center text-sm">Nothing here.</div>,

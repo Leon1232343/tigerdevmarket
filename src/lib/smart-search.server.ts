@@ -1,6 +1,6 @@
 /**
  * AI smart search over the external offers database.
- * Uses the Google Gemini API directly (free tier) to turn free-form text into
+ * Uses the Groq API (free tier, OpenAI-compatible) to turn free-form text into
  * structured marketplace filters, then matches offers with keyword search.
  * Server-only — never import from client code.
  */
@@ -8,13 +8,13 @@ import { query, mapOffer, SELECT_COLUMNS, JOINS, POST_TYPE_MAP } from "@/lib/off
 import type { OfferRow } from "@/lib/offers.server";
 import type { Offer, PostType } from "@/lib/market-data";
 
-const GEMINI_API = "https://generativelanguage.googleapis.com/v1beta/models";
-// Free tier: highest request limits among current Gemini models.
-const CHAT_MODEL = "gemini-2.5-flash";
+const GROQ_API = "https://api.groq.com/openai/v1/chat/completions";
+// Free tier: highest rate limits among Groq's production models.
+const CHAT_MODEL = "llama-3.3-70b-versatile";
 
 function apiKey(): string {
-  const key = process.env["GEMINI_API_KEY"];
-  if (!key) throw new Error("GEMINI_API_KEY is not configured");
+  const key = process.env["GROQ_API_KEY"];
+  if (!key) throw new Error("GROQ_API_KEY is not configured");
   return key;
 }
 
@@ -49,46 +49,46 @@ const EMPTY_INTERPRETATION: Interpretation = {
   minPrice: null,
 };
 
-/** Ask Gemini to turn free-form text into structured marketplace filters. */
+/** Ask the model to turn free-form text into structured marketplace filters. */
 export async function interpretQuery(raw: string): Promise<Interpretation> {
   const text = raw.trim().slice(0, 300);
   if (!text) return EMPTY_INTERPRETATION;
 
-  const prompt = `You turn a Roblox developer marketplace search query into JSON filters.
+  const system = `You turn a Roblox developer marketplace search query into JSON filters.
 Allowed "category" values: ${CATEGORIES.join(", ")} or null.
 Allowed "postType" values: hiring, forhire, buying, selling, investment, or null.
 Return ONLY JSON with keys: semanticQuery (string, cleaned English description of what the user wants),
 keywords (array of up to 5 short lowercase terms), category, postType,
 verifiedOnly (boolean), minPrice (number in Robux or null), maxPrice (number in Robux or null).
-The query may be in any language; semanticQuery must be English.
-
-Query: ${text}`;
+The query may be in any language; semanticQuery must be English.`;
 
   try {
-    const response = await fetch(
-      `${GEMINI_API}/${CHAT_MODEL}:generateContent?key=${encodeURIComponent(apiKey())}`,
-      {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: {
-            responseMimeType: "application/json",
-            temperature: 0,
-            maxOutputTokens: 512,
-          },
-        }),
+    const response = await fetch(GROQ_API, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        Authorization: `Bearer ${apiKey()}`,
       },
-    );
+      body: JSON.stringify({
+        model: CHAT_MODEL,
+        temperature: 0,
+        max_tokens: 512,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: text },
+        ],
+      }),
+    });
     if (!response.ok) {
       console.error(`Smart search interpret failed [${response.status}]: ${await response.text()}`);
       return { ...EMPTY_INTERPRETATION, semanticQuery: text };
     }
     const payload = (await response.json()) as {
-      candidates?: { content?: { parts?: { text?: string }[] } }[];
+      choices?: { message?: { content?: string } }[];
     };
-    const content = payload.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
-    const parsed = JSON.parse(content) as Partial<Interpretation>;
+    const parsed = JSON.parse(payload.choices?.[0]?.message?.content ?? "{}") as
+      Partial<Interpretation>;
 
     const category =
       typeof parsed.category === "string"
@@ -169,7 +169,7 @@ export async function smartSearchOffers(params: {
     where.push(`v.user_id IS NOT NULL`);
   }
 
-  // Keyword match using the terms Gemini extracted (or the raw query).
+  // Keyword match using the terms the model extracted (or the raw query).
   const terms = interpretation.keywords.length > 0 ? interpretation.keywords : [params.search];
   const ors: string[] = [];
   for (const term of terms.filter(Boolean).slice(0, 5)) {

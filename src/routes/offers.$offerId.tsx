@@ -17,7 +17,8 @@ export const Route = createFileRoute("/offers/$offerId")({
   },
   errorComponent: ({ error }) => (
     <div role="alert" className="mx-auto max-w-xl px-4 py-24 text-center text-sm">
-      Could not load this offer. {error.message}
+      Could not load this offer.{" "}
+      {error instanceof Error ? error.message : "Please try again."}
     </div>
   ),
   notFoundComponent: () => (
