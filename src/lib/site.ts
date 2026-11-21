@@ -1,5 +1,5 @@
 /** Canonical site constants used for canonical URLs, social cards and JSON-LD. */
-export const SITE_URL = "https://tigerdevmarket.lovable.app";
+export const SITE_URL = "https://tigermarket.bg5.net";
 export const SITE_NAME = "Tiger Market";
 export const OG_IMAGE = `${SITE_URL}/og-tiger-market.jpg`;
 

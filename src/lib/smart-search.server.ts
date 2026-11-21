@@ -4,7 +4,7 @@
  * structured marketplace filters, then matches offers with keyword search.
  * Server-only — never import from client code.
  */
-import { query, mapOffer, SELECT_COLUMNS, JOINS, POST_TYPE_MAP } from "@/lib/offers.server";
+import { query, mapOffer, SELECT_COLUMNS, JOINS, POST_TYPE_MAP, QUALITY_WHERE } from "@/lib/offers.server";
 import type { OfferRow } from "@/lib/offers.server";
 import type { Offer, PostType } from "@/lib/market-data";
 
@@ -143,7 +143,7 @@ export async function smartSearchOffers(params: {
   const page = Math.max(params.page ?? 1, 1);
   const interpretation = await interpretQuery(params.search);
 
-  const where: string[] = ["o.message_content IS NOT NULL", "length(o.message_content) > 20"];
+  const where: string[] = [...QUALITY_WHERE];
   const values: unknown[] = [];
 
   if (interpretation.category) {

@@ -2,6 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { SiteNav } from "@/components/market/SiteNav";
 import { SiteFooter } from "@/components/market/SiteFooter";
 import { Stars } from "@/components/market/Stars";
+import { isExpired, relativeTime } from "@/lib/offer-format";
 import { postTypeClass, POST_TYPES, type Offer } from "@/lib/market-data";
 import { responsiveOfferImage } from "@/lib/offer-images";
 import { fetchOffer } from "@/lib/offers.functions";
@@ -104,6 +105,12 @@ function OfferDetailPage() {
               <span className="chip">{offer.category}</span>
               {offer.verified && <span className="chip border-gold/40 text-gold">Verified ✓</span>}
               <span className="chip capitalize">{offer.source}</span>
+              {offer.postedAt && (
+                <span className="chip font-mono" suppressHydrationWarning>
+                  {isExpired(offer.postedAt) ? "Expired · " : ""}
+                  {relativeTime(offer.postedAt)}
+                </span>
+              )}
             </div>
 
             <h1 className="mt-4 text-2xl leading-tight font-bold sm:text-3xl">{offer.title}</h1>

@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { postTypeClass, type Offer } from "@/lib/market-data";
+import { POST_TYPES, postTypeClass, type Offer } from "@/lib/market-data";
+import { relativeTime } from "@/lib/offer-format";
 import { responsiveOfferImage } from "@/lib/offer-images";
 import { Stars } from "./Stars";
 
@@ -51,15 +52,25 @@ export function OfferCard({ offer }: { offer: Offer }) {
         </p>
 
         <div className="flex flex-wrap items-center gap-1.5">
+          <span
+            className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-background ${postTypeClass[offer.postType]}`}
+          >
+            {POST_TYPES.find((t) => t.value === offer.postType)?.label}
+          </span>
           <span className="chip">{offer.category}</span>
           {offer.verified && (
             <span className="chip border-gold/40 text-gold">Verified ✓</span>
           )}
           <span className="chip capitalize">{offer.source}</span>
+          {offer.postedAt && (
+            <time dateTime={offer.postedAt} className="ml-auto font-mono text-[11px] text-muted-foreground" suppressHydrationWarning>
+              {relativeTime(offer.postedAt)}
+            </time>
+          )}
         </div>
 
         <div className="mt-auto flex items-center justify-between gap-2 pt-1">
-          <Stars rating={offer.rating} />
+          <Stars rating={offer.rating} reviews={offer.reviews} />
           <span className="price-tag">{offer.price}</span>
         </div>
       </Link>

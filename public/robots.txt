@@ -16,4 +16,4 @@ Disallow: /api/
 Disallow: /login
 Disallow: /thank-you
 
-Sitemap: https://tigerdevmarket.lovable.app/sitemap.xml
+Sitemap: https://tigermarket.bg5.net/sitemap.xml

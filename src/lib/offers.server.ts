@@ -4,6 +4,7 @@
  */
 import { Client } from "pg";
 import type { Offer, OfferSource, PostType } from "@/lib/market-data";
+import { formatPrice, cleanTitle } from "@/lib/offer-format";
 
 /**
  * Serverless runtimes cannot keep TCP sockets alive between requests, so a
@@ -117,25 +118,21 @@ function paragraphs(content: string): string[] {
 function buildTitle(row: OfferRow): string {
   const lines = (row.message_content ?? "")
     .split("\n")
-    .map((line) => clean(line))
+    .map((line) => cleanTitle(clean(line)))
     .filter((line) => line.length > 3);
   const first = lines.find((line) => line.length >= 8) ?? lines[0];
-  if (first) return first.length > 96 ? `${first.slice(0, 93).trimEnd()}…` : first;
+  if (first) return first;
   const service = row.service_type && row.service_type !== "General" ? row.service_type : "Roblox";
   return `${row.post_type ?? "Offer"} — ${service}`;
 }
 
-function formatPrice(row: OfferRow): string {
-  const display = (row.price_display ?? "").trim();
-  if (display) return display.length > 44 ? `${display.slice(0, 41)}…` : display;
-  const min = row.price_min ?? 0;
-  const max = row.price_max ?? 0;
-  if (min > 0 && max > 0 && max !== min)
-    return `R$ ${min.toLocaleString("en-US")}–${max.toLocaleString("en-US")}`;
-  const single = min || max;
-  if (single > 0) return `R$ ${single.toLocaleString("en-US")}`;
-  return "Negotiable";
-}
+/** Default-list quality filter: hides near-empty, junk "Other" and expired (>30d) offers. */
+export const QUALITY_WHERE = [
+  "o.message_content IS NOT NULL",
+  "length(trim(o.message_content)) >= 25",
+  `NOT (coalesce(o.category,'') ILIKE 'other' AND coalesce(trim(o.price_display),'') = '' AND coalesce(o.price_min,0) = 0 AND coalesce(o.price_max,0) = 0)`,
+  "(o.timestamp IS NULL OR o.timestamp > now() - interval '30 days')",
+];
 
 function splitList(value: string | null): string[] {
   return (value ?? "")
@@ -224,7 +221,7 @@ export type ListParams = {
 export async function listOffers(params: ListParams) {
   const perPage = Math.min(Math.max(params.perPage ?? 12, 1), 48);
   const page = Math.max(params.page ?? 1, 1);
-  const where: string[] = ["o.message_content IS NOT NULL", "length(o.message_content) > 20"];
+  const where: string[] = [...QUALITY_WHERE];
   const values: unknown[] = [];
 
   if (params.category && params.category !== "all") {

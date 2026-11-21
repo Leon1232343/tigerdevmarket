@@ -8,6 +8,13 @@ export function Stars({
   size?: "sm" | "lg";
 }) {
   const rounded = Math.round(rating);
+  if (!reviews || reviews <= 0) {
+    return (
+      <span className="chip text-muted-foreground" title="No ratings yet">
+        New
+      </span>
+    );
+  }
 
   return (
     <span className="flex items-center gap-2">

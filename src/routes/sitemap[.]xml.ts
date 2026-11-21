@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { getAllOfferIds } from "@/lib/offers.server";
 
-const BASE_URL = "https://tigerdevmarket.lovable.app";
+const BASE_URL = "https://tigermarket.bg5.net";
 
 interface SitemapEntry {
   path: string;

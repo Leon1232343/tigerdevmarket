@@ -74,11 +74,11 @@
   --input: oklch(0.27 0 0);
   --ring: oklch(0.63 0.115 58);
   --gold: oklch(0.78 0.13 88);
-  --type-hiring: oklch(0.63 0.115 58);
-  --type-forhire: oklch(0.68 0.09 200);
-  --type-buying: oklch(0.7 0.1 150);
-  --type-selling: oklch(0.72 0.11 300);
-  --type-investment: oklch(0.78 0.13 88);
+  --type-hiring: oklch(0.68 0.12 150);
+  --type-forhire: oklch(0.8 0.12 95);
+  --type-buying: oklch(0.66 0.1 250);
+  --type-selling: oklch(0.76 0.11 80);
+  --type-investment: oklch(0.68 0.14 50);
 }
 
 @layer base {
