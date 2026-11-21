@@ -7,17 +7,17 @@ export const Route = createFileRoute("/about")({
   component: AboutPage,
   head: () => ({
     meta: [
-      { title: "About Tiger Market — Founder & Developer Leon Fricke" },
+      { title: "About Tiger Market — Founder & Developer Leon T." },
       {
         name: "description",
         content:
-          "About Tiger Market, a marketplace and discovery platform for Roblox developers. Built as an independent developer project by founder and developer Leon Fricke.",
+          "About Tiger Market, a marketplace and discovery platform for Roblox developers. Built as an independent developer project by founder and developer Leon T..",
       },
-      { property: "og:title", content: "About Tiger Market — Founder & Developer Leon Fricke" },
+      { property: "og:title", content: "About Tiger Market — Founder & Developer Leon T." },
       {
         property: "og:description",
         content:
-          "Tiger Market is a marketplace and discovery platform for Roblox developers, built by founder and developer Leon Fricke.",
+          "Tiger Market is a marketplace and discovery platform for Roblox developers, built by founder and developer Leon T..",
       },
       { property: "og:type", content: "website" },
       { property: "og:url", content: SITE_URL + "/about" },
@@ -36,7 +36,7 @@ export const Route = createFileRoute("/about")({
           "@type": "ProfilePage",
           mainEntity: {
             "@type": "Person",
-            name: "Leon Fricke",
+            name: "Leon T.",
             jobTitle: "Founder & Developer",
             url: SITE_URL + "/about",
           },
@@ -90,7 +90,7 @@ function AboutPage() {
                 <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Name
                 </dt>
-                <dd className="text-sm font-semibold text-foreground">Leon Fricke</dd>
+                <dd className="text-sm font-semibold text-foreground">Leon T.</dd>
               </div>
               <div className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -115,7 +115,7 @@ function AboutPage() {
               multiple Roblox developer communities together in one place.
             </p>
             <p className="mt-3 text-sm text-muted-foreground">
-              The platform is designed, developed and operated by Leon Fricke, covering the
+              The platform is designed, developed and operated by Leon T., covering the
               marketplace experience itself as well as the underlying infrastructure: live offer
               discovery, AI-powered smart search and Discord-based sign-in.
             </p>
