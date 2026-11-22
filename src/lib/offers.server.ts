@@ -1,3 +1,4 @@
+import { applyBrowseFilters, normalizeFilters, sortSql, type BrowseFilters } from "@/lib/offer-filters";
 /**
  * Server-only access to the external Tiger Market offers database (Render Postgres).
  * Never import this from client code.
@@ -216,7 +217,7 @@ export type ListParams = {
   search?: string;
   page?: number;
   perPage?: number;
-};
+} & Partial<BrowseFilters>;
 
 export async function listOffers(params: ListParams) {
   const perPage = Math.min(Math.max(params.perPage ?? 12, 1), 48);
@@ -246,16 +247,19 @@ export async function listOffers(params: ListParams) {
     );
   }
 
+  const filters = normalizeFilters(params);
+  applyBrowseFilters(filters, where, values);
+
   const whereSql = `WHERE ${where.join(" AND ")}`;
   const countRows = await query<{ total: string }>(
-    `SELECT COUNT(*)::text AS total FROM offers o ${whereSql}`,
+    `SELECT COUNT(*)::text AS total FROM offers o ${JOINS} ${whereSql}`,
     values,
   );
   const total = Number(countRows[0]?.total ?? 0);
 
   const rows = await query<OfferRow>(
     `SELECT ${SELECT_COLUMNS} FROM offers o ${JOINS} ${whereSql}
-     ORDER BY o.is_pinned DESC NULLS LAST, o.timestamp DESC NULLS LAST
+     ORDER BY ${sortSql(filters.sort)}
      LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
     [...values, perPage, (page - 1) * perPage],
   );

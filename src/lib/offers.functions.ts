@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { normalizeFilters, type BrowseFilters } from "@/lib/offer-filters";
 
 export type OfferListInput = {
   category?: string;
@@ -6,7 +7,7 @@ export type OfferListInput = {
   search?: string;
   page?: number;
   perPage?: number;
-};
+} & Partial<BrowseFilters>;
 
 export const fetchOffers = createServerFn({ method: "GET" })
   .inputValidator((input: OfferListInput | undefined) => ({
@@ -15,6 +16,7 @@ export const fetchOffers = createServerFn({ method: "GET" })
     search: typeof input?.search === "string" ? input.search.slice(0, 80) : "",
     page: Number.isFinite(input?.page) ? Math.max(1, Math.floor(Number(input?.page))) : 1,
     perPage: Number.isFinite(input?.perPage) ? Math.floor(Number(input?.perPage)) : 12,
+    ...normalizeFilters(input),
   }))
   .handler(async ({ data }) => {
     const { listOffers } = await import("@/lib/offers.server");
