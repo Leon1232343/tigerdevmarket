@@ -315,5 +315,9 @@ export async function getUserBySessionToken(token: string): Promise<SessionUser 
 export function sanitizeReturnTo(value: string | null): string {
   if (!value) return "/";
   if (!value.startsWith("/") || value.startsWith("//")) return "/";
+  // Browsers treat `\\` as `/` when resolving a URL, so `/\\evil.example` and
+  // its encoded spellings leave the origin. Control characters are stripped by
+  // the URL parser before resolution, which can turn `/\t/evil` into `//evil`.
+  if (value.includes("\\") || /[\u0000-\u001f\u007f]/.test(value)) return "/";
   return value;
 }

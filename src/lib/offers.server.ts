@@ -1,11 +1,12 @@
 import { applyBrowseFilters, normalizeFilters, sortSql, type BrowseFilters } from "@/lib/offer-filters";
 /**
- * Server-only access to the external Tiger Market offers database (Render Postgres).
+ * Server-only access to the external Tiger Market offers database (Neon Postgres).
  * Never import this from client code.
  */
 import { Client } from "pg";
 import type { Offer, OfferSource, PostType } from "@/lib/market-data";
 import { formatPrice, cleanTitle } from "@/lib/offer-format";
+import { dbClientConfig } from "@/lib/offers-db-config";
 
 /**
  * Serverless runtimes cannot keep TCP sockets alive between requests, so a
@@ -14,19 +15,8 @@ import { formatPrice, cleanTitle } from "@/lib/offer-format";
 export async function query<T>(sql: string, params: unknown[] = []): Promise<T[]> {
   const connectionString = process.env["TIGER_MARKET_DB_URL"];
   if (!connectionString) throw new Error("TIGER_MARKET_DB_URL is not configured");
-  // Parse manually: extra query params (e.g. channel_binding) break the driver,
-  // and the TLS handshake needs an explicit SNI servername.
-  const url = new URL(connectionString);
-  const client = new Client({
-    host: url.hostname,
-    port: url.port ? Number(url.port) : 5432,
-    user: decodeURIComponent(url.username),
-    password: decodeURIComponent(url.password),
-    database: url.pathname.slice(1),
-    ssl: { rejectUnauthorized: false, servername: url.hostname },
-    connectionTimeoutMillis: 15_000,
-    query_timeout: 20_000,
-  });
+  // TLS is on and the server certificate is verified; see offers-db-config.ts.
+  const client = new Client(dbClientConfig(connectionString));
   await client.connect();
   try {
     const result = await client.query(sql, params as never[]);
