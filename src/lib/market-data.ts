@@ -40,6 +40,7 @@ export type Offer = {
   postType: PostType;
   source: OfferSource;
   seller: string;
+  sellerId: string | null;
   verified: boolean;
   price: string;
   paymentMethods: string[];

@@ -18,6 +18,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TermsOfUseRouteImport } from './routes/terms-of-use'
 import { Route as ThankYouRouteImport } from './routes/thank-you'
 import { Route as OffersOfferIdRouteImport } from './routes/offers.$offerId'
+import { Route as SellerSellerIdRouteImport } from './routes/seller.$sellerId'
 import { Route as TradeOfferIdRouteImport } from './routes/trade.$offerId'
 import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth/logout'
 import { Route as ApiPublicImgRouteImport } from './routes/api/public/img'
@@ -69,6 +70,11 @@ const OffersOfferIdRoute = OffersOfferIdRouteImport.update({
   path: '/offers/$offerId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SellerSellerIdRoute = SellerSellerIdRouteImport.update({
+  id: '/seller/$sellerId',
+  path: '/seller/$sellerId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TradeOfferIdRoute = TradeOfferIdRouteImport.update({
   id: '/trade/$offerId',
   path: '/trade/$offerId',
@@ -105,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/terms-of-use': typeof TermsOfUseRoute
   '/thank-you': typeof ThankYouRoute
   '/offers/$offerId': typeof OffersOfferIdRoute
+  '/seller/$sellerId': typeof SellerSellerIdRoute
   '/trade/$offerId': typeof TradeOfferIdRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/public/img': typeof ApiPublicImgRoute
@@ -121,6 +128,7 @@ export interface FileRoutesByTo {
   '/terms-of-use': typeof TermsOfUseRoute
   '/thank-you': typeof ThankYouRoute
   '/offers/$offerId': typeof OffersOfferIdRoute
+  '/seller/$sellerId': typeof SellerSellerIdRoute
   '/trade/$offerId': typeof TradeOfferIdRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/public/img': typeof ApiPublicImgRoute
@@ -138,6 +146,7 @@ export interface FileRoutesById {
   '/terms-of-use': typeof TermsOfUseRoute
   '/thank-you': typeof ThankYouRoute
   '/offers/$offerId': typeof OffersOfferIdRoute
+  '/seller/$sellerId': typeof SellerSellerIdRoute
   '/trade/$offerId': typeof TradeOfferIdRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/public/img': typeof ApiPublicImgRoute
@@ -156,6 +165,7 @@ export interface FileRouteTypes {
     | '/terms-of-use'
     | '/thank-you'
     | '/offers/$offerId'
+    | '/seller/$sellerId'
     | '/trade/$offerId'
     | '/api/auth/logout'
     | '/api/public/img'
@@ -172,6 +182,7 @@ export interface FileRouteTypes {
     | '/terms-of-use'
     | '/thank-you'
     | '/offers/$offerId'
+    | '/seller/$sellerId'
     | '/trade/$offerId'
     | '/api/auth/logout'
     | '/api/public/img'
@@ -188,6 +199,7 @@ export interface FileRouteTypes {
     | '/terms-of-use'
     | '/thank-you'
     | '/offers/$offerId'
+    | '/seller/$sellerId'
     | '/trade/$offerId'
     | '/api/auth/logout'
     | '/api/public/img'
@@ -205,6 +217,7 @@ export interface RootRouteChildren {
   TermsOfUseRoute: typeof TermsOfUseRoute
   ThankYouRoute: typeof ThankYouRoute
   OffersOfferIdRoute: typeof OffersOfferIdRoute
+  SellerSellerIdRoute: typeof SellerSellerIdRoute
   TradeOfferIdRoute: typeof TradeOfferIdRoute
   ApiAuthLogoutRoute: typeof ApiAuthLogoutRoute
   ApiPublicImgRoute: typeof ApiPublicImgRoute
@@ -277,6 +290,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OffersOfferIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/seller/$sellerId': {
+      id: '/seller/$sellerId'
+      path: '/seller/$sellerId'
+      fullPath: '/seller/$sellerId'
+      preLoaderRoute: typeof SellerSellerIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/trade/$offerId': {
       id: '/trade/$offerId'
       path: '/trade/$offerId'
@@ -325,6 +345,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsOfUseRoute: TermsOfUseRoute,
   ThankYouRoute: ThankYouRoute,
   OffersOfferIdRoute: OffersOfferIdRoute,
+  SellerSellerIdRoute: SellerSellerIdRoute,
   TradeOfferIdRoute: TradeOfferIdRoute,
   ApiAuthLogoutRoute: ApiAuthLogoutRoute,
   ApiPublicImgRoute: ApiPublicImgRoute,

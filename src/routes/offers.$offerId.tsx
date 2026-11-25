@@ -123,7 +123,13 @@ function OfferDetailPage() {
                 >
                   {offer.seller.slice(0, 2).toUpperCase()}
                 </span>
-                {offer.seller}
+                {offer.sellerId ? (
+                  <Link to="/seller/$sellerId" params={{ sellerId: offer.sellerId }} className="hover:text-accent underline-offset-4 hover:underline">
+                    {offer.seller}
+                  </Link>
+                ) : (
+                  offer.seller
+                )}
               </span>
               <Stars rating={offer.rating} reviews={offer.reviews} size="lg" />
               <span className="price-tag ml-auto text-sm">{offer.price}</span>

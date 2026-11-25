@@ -34,3 +34,10 @@ export const fetchMarketOverview = createServerFn({ method: "GET" }).handler(asy
   const { getMarketOverview } = await import("@/lib/offers.server");
   return getMarketOverview();
 });
+
+export const fetchSeller = createServerFn({ method: "GET" })
+  .inputValidator((input: { sellerId: string }) => ({ sellerId: String(input.sellerId).slice(0, 40) }))
+  .handler(async ({ data }) => {
+    const { getSellerProfile } = await import("@/lib/offers.server");
+    return getSellerProfile(data.sellerId);
+  });

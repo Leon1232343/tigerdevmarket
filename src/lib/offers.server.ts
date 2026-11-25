@@ -177,6 +177,7 @@ export function mapOffer(row: OfferRow): OfferDTO {
     postType: toPostType(row.post_type),
     source: (row.source ?? "discord") === "website" ? "website" : "discord",
     seller: row.seller_username ?? "unknown",
+    sellerId: row.seller_id && /^[\w-]{1,40}$/.test(row.seller_id) ? row.seller_id : null,
     verified,
     price: formatPrice(row),
     paymentMethods: splitList(row.payment_method).filter(
@@ -334,4 +335,40 @@ export async function getAllOfferIds(): Promise<{ offerId: string; postedAt: str
     offerId: String(row.offer_id),
     postedAt: row.timestamp ? new Date(row.timestamp).toISOString() : null,
   }));
+}
+
+/** Public seller profile: identity, stats and their active offers (quality-filtered). */
+export async function getSellerProfile(sellerId: string) {
+  if (!/^[\w-]{1,40}$/.test(sellerId)) return null;
+  const rows = await query<OfferRow>(
+    `SELECT ${SELECT_COLUMNS} FROM offers o ${JOINS}
+      WHERE o.seller_id = $1 AND ${QUALITY_WHERE.join(" AND ")}
+      ORDER BY o.timestamp DESC NULLS LAST LIMIT 48`,
+    [sellerId],
+  );
+  const [stats] = await query<{ total: string; first: Date | string | null; name: string | null; verified: boolean; reviews: string; avg: number | null }>(
+    `SELECT COUNT(*)::text AS total, MIN(o.timestamp) AS first,
+            (array_agg(o.seller_username ORDER BY o.timestamp DESC NULLS LAST))[1] AS name,
+            bool_or(v.user_id IS NOT NULL) AS verified,
+            (SELECT COUNT(*)::text FROM ratings ra JOIN offers x ON x.offer_id = ra.offer_id WHERE x.seller_id = $1) AS reviews,
+            (SELECT AVG(ra.score)::real FROM ratings ra JOIN offers x ON x.offer_id = ra.offer_id WHERE x.seller_id = $1) AS avg
+       FROM offers o LEFT JOIN verified_users v ON v.user_id = o.seller_id
+      WHERE o.seller_id = $1`,
+    [sellerId],
+  );
+  if (!stats || Number(stats.total) === 0) return null;
+  const offers = rows.map(mapOffer);
+  const categories = [...new Set(offers.flatMap((o) => o.categories))].slice(0, 8);
+  return {
+    sellerId,
+    name: stats.name ?? "unknown",
+    verified: Boolean(stats.verified),
+    totalOffers: Number(stats.total),
+    activeOffers: offers.length,
+    memberSince: stats.first ? new Date(stats.first).toISOString() : null,
+    reviews: Number(stats.reviews ?? 0),
+    rating: Number(stats.avg ?? 0) || 0,
+    categories,
+    offers,
+  };
 }
