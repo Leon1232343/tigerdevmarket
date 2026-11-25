@@ -19,6 +19,9 @@ describe("browse filters", () => {
     expect(values).toContain(500);
     expect(where.some((w) => w.includes("<= $"))).toBe(true);
   });
+  it("price sorts ignore absurd prices below 10 or above 5,000,000", () => {
+    expect(sortSql("price_asc")).toContain("BETWEEN 10 AND 5000000");
+  });
   it("payment filter only keeps known methods", () => {
     expect(normalizeFilters({ payments: ["paypal", "gold"] }).payments).toEqual(["paypal"]);
   });

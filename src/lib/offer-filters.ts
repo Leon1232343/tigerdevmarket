@@ -51,15 +51,19 @@ const PAYMENT_PATTERNS: Record<string, string[]> = {
   crypto: ["%crypto%", "%btc%", "%bitcoin%", "%eth%", "%ltc%", "%usdt%"],
 };
 
+/** Sane price bounds, matching formatPrice so sort/filter agree with what cards show. */
+const SANE_LO = "(CASE WHEN coalesce(nullif(o.price_min,0), o.price_max) BETWEEN 10 AND 5000000 THEN coalesce(nullif(o.price_min,0), o.price_max) END)";
+const SANE_HI = "(CASE WHEN coalesce(nullif(o.price_max,0), o.price_min) BETWEEN 10 AND 5000000 THEN coalesce(nullif(o.price_max,0), o.price_min) END)";
+
 export function sortSql(sort: string): string {
   const tail = "o.timestamp DESC NULLS LAST";
   switch (sort) {
     case "oldest":
       return "o.timestamp ASC NULLS LAST";
     case "price_asc":
-      return `coalesce(nullif(o.price_min,0), nullif(o.price_max,0)) ASC NULLS LAST, ${tail}`;
+      return `${SANE_LO} ASC NULLS LAST, ${tail}`;
     case "price_desc":
-      return `coalesce(nullif(o.price_max,0), nullif(o.price_min,0)) DESC NULLS LAST, ${tail}`;
+      return `${SANE_HI} DESC NULLS LAST, ${tail}`;
     case "rating":
       return `r.avg_score DESC NULLS LAST, r.review_count DESC NULLS LAST, ${tail}`;
     case "verified":
@@ -77,17 +81,17 @@ export function applyBrowseFilters(f: BrowseFilters, where: string[], values: un
   };
   const hasPrice = f.minPrice !== null || f.maxPrice !== null;
   if (hasPrice) {
-    where.push("coalesce(o.price_min,0) + coalesce(o.price_max,0) > 0");
+    where.push(`${SANE_LO} IS NOT NULL AND ${SANE_HI} IS NOT NULL`);
     const patterns = CURRENCY_PATTERNS[f.currency];
     if (patterns) any(patterns, "o.price_display");
   }
   if (f.minPrice !== null) {
     values.push(f.minPrice);
-    where.push(`coalesce(nullif(o.price_max,0), o.price_min) >= $${values.length}`);
+    where.push(`${SANE_HI} >= $${values.length}`);
   }
   if (f.maxPrice !== null) {
     values.push(f.maxPrice);
-    where.push(`coalesce(nullif(o.price_min,0), o.price_max) <= $${values.length}`);
+    where.push(`${SANE_LO} <= $${values.length}`);
   }
   const pay = f.payments.flatMap((p) => PAYMENT_PATTERNS[p] ?? []);
   if (pay.length > 0) any(pay, "o.payment_method");
