@@ -19,14 +19,19 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as PostOfferRouteImport } from './routes/post-offer'
 import { Route as ScamDatabaseRouteImport } from './routes/scam-database'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as StatsRouteImport } from './routes/stats'
 import { Route as TermsOfUseRouteImport } from './routes/terms-of-use'
 import { Route as ThankYouRouteImport } from './routes/thank-you'
 import { Route as GoAdIdRouteImport } from './routes/go.$adId'
+import { Route as HireIndexRouteImport } from './routes/hire.index'
+import { Route as HireSlugRouteImport } from './routes/hire.$slug'
 import { Route as OffersOfferIdRouteImport } from './routes/offers.$offerId'
 import { Route as SellerSellerIdRouteImport } from './routes/seller.$sellerId'
 import { Route as TradeOfferIdRouteImport } from './routes/trade.$offerId'
 import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth/logout'
 import { Route as ApiPublicImgRouteImport } from './routes/api/public/img'
+import { Route as DeHireIndexRouteImport } from './routes/de.hire.index'
+import { Route as DeHireSlugRouteImport } from './routes/de.hire.$slug'
 import { Route as ApiAuthDiscordCallbackRouteImport } from './routes/api/auth/discord/callback'
 import { Route as ApiAuthDiscordLoginRouteImport } from './routes/api/auth/discord/login'
 
@@ -80,6 +85,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StatsRoute = StatsRouteImport.update({
+  id: '/stats',
+  path: '/stats',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TermsOfUseRoute = TermsOfUseRouteImport.update({
   id: '/terms-of-use',
   path: '/terms-of-use',
@@ -93,6 +103,16 @@ const ThankYouRoute = ThankYouRouteImport.update({
 const GoAdIdRoute = GoAdIdRouteImport.update({
   id: '/go/$adId',
   path: '/go/$adId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HireIndexRoute = HireIndexRouteImport.update({
+  id: '/hire/',
+  path: '/hire/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HireSlugRoute = HireSlugRouteImport.update({
+  id: '/hire/$slug',
+  path: '/hire/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OffersOfferIdRoute = OffersOfferIdRouteImport.update({
@@ -120,6 +140,16 @@ const ApiPublicImgRoute = ApiPublicImgRouteImport.update({
   path: '/api/public/img',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DeHireIndexRoute = DeHireIndexRouteImport.update({
+  id: '/de/hire/',
+  path: '/de/hire/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DeHireSlugRoute = DeHireSlugRouteImport.update({
+  id: '/de/hire/$slug',
+  path: '/de/hire/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthDiscordCallbackRoute = ApiAuthDiscordCallbackRouteImport.update({
   id: '/api/auth/discord/callback',
   path: '/api/auth/discord/callback',
@@ -142,14 +172,19 @@ export interface FileRoutesByFullPath {
   '/post-offer': typeof PostOfferRoute
   '/scam-database': typeof ScamDatabaseRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/stats': typeof StatsRoute
   '/terms-of-use': typeof TermsOfUseRoute
   '/thank-you': typeof ThankYouRoute
   '/go/$adId': typeof GoAdIdRoute
+  '/hire/$slug': typeof HireSlugRoute
   '/offers/$offerId': typeof OffersOfferIdRoute
   '/seller/$sellerId': typeof SellerSellerIdRoute
   '/trade/$offerId': typeof TradeOfferIdRoute
+  '/hire/': typeof HireIndexRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/public/img': typeof ApiPublicImgRoute
+  '/de/hire/$slug': typeof DeHireSlugRoute
+  '/de/hire/': typeof DeHireIndexRoute
   '/api/auth/discord/callback': typeof ApiAuthDiscordCallbackRoute
   '/api/auth/discord/login': typeof ApiAuthDiscordLoginRoute
 }
@@ -164,14 +199,19 @@ export interface FileRoutesByTo {
   '/post-offer': typeof PostOfferRoute
   '/scam-database': typeof ScamDatabaseRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/stats': typeof StatsRoute
   '/terms-of-use': typeof TermsOfUseRoute
   '/thank-you': typeof ThankYouRoute
   '/go/$adId': typeof GoAdIdRoute
+  '/hire/$slug': typeof HireSlugRoute
   '/offers/$offerId': typeof OffersOfferIdRoute
   '/seller/$sellerId': typeof SellerSellerIdRoute
   '/trade/$offerId': typeof TradeOfferIdRoute
+  '/hire': typeof HireIndexRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/public/img': typeof ApiPublicImgRoute
+  '/de/hire/$slug': typeof DeHireSlugRoute
+  '/de/hire': typeof DeHireIndexRoute
   '/api/auth/discord/callback': typeof ApiAuthDiscordCallbackRoute
   '/api/auth/discord/login': typeof ApiAuthDiscordLoginRoute
 }
@@ -187,14 +227,19 @@ export interface FileRoutesById {
   '/post-offer': typeof PostOfferRoute
   '/scam-database': typeof ScamDatabaseRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/stats': typeof StatsRoute
   '/terms-of-use': typeof TermsOfUseRoute
   '/thank-you': typeof ThankYouRoute
   '/go/$adId': typeof GoAdIdRoute
+  '/hire/$slug': typeof HireSlugRoute
   '/offers/$offerId': typeof OffersOfferIdRoute
   '/seller/$sellerId': typeof SellerSellerIdRoute
   '/trade/$offerId': typeof TradeOfferIdRoute
+  '/hire/': typeof HireIndexRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/public/img': typeof ApiPublicImgRoute
+  '/de/hire/$slug': typeof DeHireSlugRoute
+  '/de/hire/': typeof DeHireIndexRoute
   '/api/auth/discord/callback': typeof ApiAuthDiscordCallbackRoute
   '/api/auth/discord/login': typeof ApiAuthDiscordLoginRoute
 }
@@ -211,14 +256,19 @@ export interface FileRouteTypes {
     | '/post-offer'
     | '/scam-database'
     | '/sitemap.xml'
+    | '/stats'
     | '/terms-of-use'
     | '/thank-you'
     | '/go/$adId'
+    | '/hire/$slug'
     | '/offers/$offerId'
     | '/seller/$sellerId'
     | '/trade/$offerId'
+    | '/hire/'
     | '/api/auth/logout'
     | '/api/public/img'
+    | '/de/hire/$slug'
+    | '/de/hire/'
     | '/api/auth/discord/callback'
     | '/api/auth/discord/login'
   fileRoutesByTo: FileRoutesByTo
@@ -233,14 +283,19 @@ export interface FileRouteTypes {
     | '/post-offer'
     | '/scam-database'
     | '/sitemap.xml'
+    | '/stats'
     | '/terms-of-use'
     | '/thank-you'
     | '/go/$adId'
+    | '/hire/$slug'
     | '/offers/$offerId'
     | '/seller/$sellerId'
     | '/trade/$offerId'
+    | '/hire'
     | '/api/auth/logout'
     | '/api/public/img'
+    | '/de/hire/$slug'
+    | '/de/hire'
     | '/api/auth/discord/callback'
     | '/api/auth/discord/login'
   id:
@@ -255,14 +310,19 @@ export interface FileRouteTypes {
     | '/post-offer'
     | '/scam-database'
     | '/sitemap.xml'
+    | '/stats'
     | '/terms-of-use'
     | '/thank-you'
     | '/go/$adId'
+    | '/hire/$slug'
     | '/offers/$offerId'
     | '/seller/$sellerId'
     | '/trade/$offerId'
+    | '/hire/'
     | '/api/auth/logout'
     | '/api/public/img'
+    | '/de/hire/$slug'
+    | '/de/hire/'
     | '/api/auth/discord/callback'
     | '/api/auth/discord/login'
   fileRoutesById: FileRoutesById
@@ -278,14 +338,19 @@ export interface RootRouteChildren {
   PostOfferRoute: typeof PostOfferRoute
   ScamDatabaseRoute: typeof ScamDatabaseRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  StatsRoute: typeof StatsRoute
   TermsOfUseRoute: typeof TermsOfUseRoute
   ThankYouRoute: typeof ThankYouRoute
   GoAdIdRoute: typeof GoAdIdRoute
+  HireSlugRoute: typeof HireSlugRoute
   OffersOfferIdRoute: typeof OffersOfferIdRoute
   SellerSellerIdRoute: typeof SellerSellerIdRoute
   TradeOfferIdRoute: typeof TradeOfferIdRoute
+  HireIndexRoute: typeof HireIndexRoute
   ApiAuthLogoutRoute: typeof ApiAuthLogoutRoute
   ApiPublicImgRoute: typeof ApiPublicImgRoute
+  DeHireSlugRoute: typeof DeHireSlugRoute
+  DeHireIndexRoute: typeof DeHireIndexRoute
   ApiAuthDiscordCallbackRoute: typeof ApiAuthDiscordCallbackRoute
   ApiAuthDiscordLoginRoute: typeof ApiAuthDiscordLoginRoute
 }
@@ -362,6 +427,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/stats': {
+      id: '/stats'
+      path: '/stats'
+      fullPath: '/stats'
+      preLoaderRoute: typeof StatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terms-of-use': {
       id: '/terms-of-use'
       path: '/terms-of-use'
@@ -381,6 +453,20 @@ declare module '@tanstack/react-router' {
       path: '/go/$adId'
       fullPath: '/go/$adId'
       preLoaderRoute: typeof GoAdIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hire/': {
+      id: '/hire/'
+      path: '/hire'
+      fullPath: '/hire/'
+      preLoaderRoute: typeof HireIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hire/$slug': {
+      id: '/hire/$slug'
+      path: '/hire/$slug'
+      fullPath: '/hire/$slug'
+      preLoaderRoute: typeof HireSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/offers/$offerId': {
@@ -418,6 +504,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicImgRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/de/hire/': {
+      id: '/de/hire/'
+      path: '/de/hire'
+      fullPath: '/de/hire/'
+      preLoaderRoute: typeof DeHireIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/de/hire/$slug': {
+      id: '/de/hire/$slug'
+      path: '/de/hire/$slug'
+      fullPath: '/de/hire/$slug'
+      preLoaderRoute: typeof DeHireSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/discord/callback': {
       id: '/api/auth/discord/callback'
       path: '/api/auth/discord/callback'
@@ -446,14 +546,19 @@ const rootRouteChildren: RootRouteChildren = {
   PostOfferRoute: PostOfferRoute,
   ScamDatabaseRoute: ScamDatabaseRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  StatsRoute: StatsRoute,
   TermsOfUseRoute: TermsOfUseRoute,
   ThankYouRoute: ThankYouRoute,
   GoAdIdRoute: GoAdIdRoute,
+  HireSlugRoute: HireSlugRoute,
   OffersOfferIdRoute: OffersOfferIdRoute,
   SellerSellerIdRoute: SellerSellerIdRoute,
   TradeOfferIdRoute: TradeOfferIdRoute,
+  HireIndexRoute: HireIndexRoute,
   ApiAuthLogoutRoute: ApiAuthLogoutRoute,
   ApiPublicImgRoute: ApiPublicImgRoute,
+  DeHireSlugRoute: DeHireSlugRoute,
+  DeHireIndexRoute: DeHireIndexRoute,
   ApiAuthDiscordCallbackRoute: ApiAuthDiscordCallbackRoute,
   ApiAuthDiscordLoginRoute: ApiAuthDiscordLoginRoute,
 }

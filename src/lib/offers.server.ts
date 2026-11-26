@@ -462,3 +462,94 @@ export async function getSellerProfile(sellerId: string) {
     offers,
   };
 }
+
+export type PublicStats = {
+  totals: {
+    offers: number;
+    today: number;
+    week: number;
+    sellers: number;
+    reviews: number;
+    avgRating: number;
+    newest: string | null;
+  };
+  categories: { slug: string; name: string; icon: string; listings: number }[];
+  topSellers: { sellerId: string; name: string; offers: number; reviews: number; rating: number }[];
+};
+
+/** Public /stats numbers: marketplace totals, category split and best-rated sellers. */
+export async function getPublicStats(): Promise<PublicStats> {
+  const [totals] = await query<{
+    offers: string;
+    today: string;
+    week: string;
+    sellers: string;
+    reviews: string;
+    avg_rating: number | null;
+    newest: Date | string | null;
+  }>(
+    `SELECT COUNT(*)::text AS offers,
+            COUNT(*) FILTER (WHERE o.timestamp > now() - interval '24 hours')::text AS today,
+            COUNT(*) FILTER (WHERE o.timestamp > now() - interval '7 days')::text AS week,
+            COUNT(DISTINCT o.seller_id)::text AS sellers,
+            (SELECT COUNT(*)::text FROM ratings) AS reviews,
+            (SELECT AVG(score)::real FROM ratings) AS avg_rating,
+            MAX(o.timestamp) AS newest
+       FROM offers o`,
+  );
+
+  const counts = await query<{ name: string; total: string }>(
+    `SELECT c.name, COUNT(o.offer_id)::text AS total
+       FROM (SELECT unnest($1::text[]) AS name) c
+       LEFT JOIN offers o ON o.category ILIKE '%' || c.name || '%'
+      GROUP BY c.name`,
+    [CANONICAL_CATEGORIES.map((cat) => cat.match)],
+  );
+  const byName = new Map(counts.map((row) => [row.name, Number(row.total)]));
+
+  const sellers = await query<{
+    seller_id: string;
+    name: string | null;
+    offers: number;
+    reviews: number;
+    rating: number | null;
+  }>(
+    `SELECT o.seller_id,
+            (array_agg(o.seller_username ORDER BY o.timestamp DESC NULLS LAST))[1] AS name,
+            COUNT(DISTINCT o.offer_id)::int AS offers,
+            COUNT(r.rating_id)::int AS reviews,
+            AVG(r.score)::real AS rating
+       FROM offers o
+       JOIN ratings r ON r.offer_id = o.offer_id
+      WHERE o.seller_id IS NOT NULL AND o.seller_id <> ''
+      GROUP BY o.seller_id
+     HAVING COUNT(r.rating_id) >= 3
+      ORDER BY AVG(r.score) DESC, COUNT(r.rating_id) DESC
+      LIMIT 5`,
+  );
+
+  return {
+    totals: {
+      offers: Number(totals?.offers ?? 0),
+      today: Number(totals?.today ?? 0),
+      week: Number(totals?.week ?? 0),
+      sellers: Number(totals?.sellers ?? 0),
+      reviews: Number(totals?.reviews ?? 0),
+      avgRating: Number(totals?.avg_rating ?? 0) || 0,
+      newest: totals?.newest ? new Date(totals.newest).toISOString() : null,
+    },
+    categories: CANONICAL_CATEGORIES.map((cat) => ({
+      slug: cat.slug,
+      name: cat.name,
+      icon: cat.icon,
+      listings: byName.get(cat.match) ?? 0,
+    })),
+    topSellers: sellers.map((row) => ({
+      sellerId: row.seller_id,
+      name: (row.name ?? "unknown").trim(),
+      offers: Number(row.offers) || 0,
+      reviews: Number(row.reviews) || 0,
+      rating: Number(row.rating) || 0,
+    })),
+  };
+}

@@ -12,6 +12,12 @@ export function SiteFooter() {
           <Link to="/scam-database" className="transition-colors hover:text-foreground">
             Scam database
           </Link>
+          <Link to="/hire" className="transition-colors hover:text-foreground">
+            Hire developers
+          </Link>
+          <Link to="/stats" className="transition-colors hover:text-foreground">
+            Stats
+          </Link>
           <Link to="/advertise" className="transition-colors hover:text-foreground">
             Advertise
           </Link>

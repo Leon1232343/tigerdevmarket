@@ -35,8 +35,15 @@ export const fetchMarketOverview = createServerFn({ method: "GET" }).handler(asy
   return getMarketOverview();
 });
 
+export const fetchPublicStats = createServerFn({ method: "GET" }).handler(async () => {
+  const { getPublicStats } = await import("@/lib/offers.server");
+  return getPublicStats();
+});
+
 export const fetchSeller = createServerFn({ method: "GET" })
-  .inputValidator((input: { sellerId: string }) => ({ sellerId: String(input.sellerId).slice(0, 40) }))
+  .inputValidator((input: { sellerId: string }) => ({
+    sellerId: String(input.sellerId).slice(0, 40),
+  }))
   .handler(async ({ data }) => {
     const { getSellerProfile } = await import("@/lib/offers.server");
     return getSellerProfile(data.sellerId);

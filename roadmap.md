@@ -6,4 +6,4 @@
 - [x] Phase 3: /seller/:id, safety box + report + share, safety banner, /scam-database, confirmed-deals badge
 - [x] Phase 4: /dashboard (my offers, favorites, saved searches, new matches), ratings, favorites, return-after-login
 - [x] Phase 5: ads table, sponsored cards, /go/:adId, /advertise, /admin (owner Discord ID server check), featured/boosted
-- [ ] Phase 6: /hire/* landing pages with FAQ schema, /stats, sitemap updates, DE/EN, Discord buttons, perf
+- [x] Phase 6: /hire/* landing pages with FAQ schema, /stats, sitemap updates, DE/EN, Discord buttons, perf (perf = lazy images + responsive srcset kept, route-level splitting; CDN cache rules still a hosting task)

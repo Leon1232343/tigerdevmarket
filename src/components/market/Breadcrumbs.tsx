@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router";
 
 /** Static destinations breadcrumbs are allowed to link to. */
-export type BreadcrumbPath = "/" | "/post-offer" | "/cookie-policy" | "/terms-of-use";
+export type BreadcrumbPath =
+  "/" | "/post-offer" | "/cookie-policy" | "/terms-of-use" | "/hire" | "/de/hire";
 
 export type BreadcrumbItem = {
   label: string;

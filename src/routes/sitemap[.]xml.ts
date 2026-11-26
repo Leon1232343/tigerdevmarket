@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { getAllOfferIds } from "@/lib/offers.server";
+import { HIRE_PAGES } from "@/lib/hire-content";
 
 const BASE_URL = "https://tigermarket.bg5.net";
 
@@ -30,6 +31,13 @@ export const Route = createFileRoute("/sitemap.xml")({
           { path: "/scam-database", changefreq: "weekly", priority: "0.6" },
           { path: "/post-offer", changefreq: "monthly", priority: "0.7" },
           { path: "/advertise", changefreq: "monthly", priority: "0.4" },
+          { path: "/stats", changefreq: "daily", priority: "0.6" },
+          { path: "/hire", changefreq: "weekly", priority: "0.8" },
+          { path: "/de/hire", changefreq: "weekly", priority: "0.7" },
+          ...HIRE_PAGES.flatMap((page) => [
+            { path: `/hire/${page.slug}`, changefreq: "weekly" as const, priority: "0.8" },
+            { path: `/de/hire/${page.slug}`, changefreq: "weekly" as const, priority: "0.7" },
+          ]),
           { path: "/cookie-policy", changefreq: "monthly", priority: "0.3" },
           { path: "/terms-of-use", changefreq: "monthly", priority: "0.3" },
         ];
