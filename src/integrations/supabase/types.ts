@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      favorites: {
+        Row: {
+          created_at: string
+          offer_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          offer_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          offer_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       offer_reports: {
         Row: {
           created_at: string
@@ -44,6 +62,30 @@ export type Database = {
           seller_id?: string | null
           seller_name?: string | null
           status?: string
+        }
+        Relationships: []
+      }
+      saved_searches: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          params: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          params?: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          params?: Json
+          user_id?: string
         }
         Relationships: []
       }
