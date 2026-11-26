@@ -8,6 +8,7 @@ import { SafetyBanner } from "@/components/market/SafetyBanner";
 import { SiteFooter } from "@/components/market/SiteFooter";
 import { OfferCard } from "@/components/market/OfferCard";
 import { SaveSearchButton } from "@/components/market/SaveSearchButton";
+import { SponsoredCard } from "@/components/market/SponsoredCard";
 import { POST_TYPES } from "@/lib/market-data";
 import {
   CURRENCIES,
@@ -18,6 +19,7 @@ import {
 } from "@/lib/offer-filters";
 import { fetchMarketOverview, fetchOffers, type OfferListInput } from "@/lib/offers.functions";
 import { smartSearch } from "@/lib/smart-search.functions";
+import { fetchSponsoredAd } from "@/lib/ads.functions";
 import { SITE_URL, socialImageMeta } from "@/lib/site";
 import { sanitizeSavedSearchParams } from "@/lib/library-params";
 
@@ -42,6 +44,14 @@ function offersQuery(input: OfferListInput) {
     queryKey: ["offers", input],
     queryFn: () => fetchOffers({ data: input }),
     staleTime: 30_000,
+  });
+}
+
+function sponsoredQuery(category: string) {
+  return queryOptions({
+    queryKey: ["sponsored-ad", category],
+    queryFn: () => fetchSponsoredAd({ data: { category } }),
+    staleTime: 60_000,
   });
 }
 
@@ -110,11 +120,13 @@ export const Route = createFileRoute("/")({
     ],
   }),
   loader: async ({ context }) => {
-    const [overview, initialOffers] = await Promise.all([
+    const [overview, initialOffers, initialSponsored] = await Promise.all([
       context.queryClient.ensureQueryData(overviewQuery),
       context.queryClient.ensureQueryData(offersQuery(DEFAULT_INPUT)),
+      // Impression is counted server-side while rendering this page.
+      context.queryClient.ensureQueryData(sponsoredQuery("all")),
     ]);
-    return { overview, initialOffers };
+    return { overview, initialOffers, initialSponsored };
   },
 
   errorComponent: ({ error }) => (
@@ -137,7 +149,7 @@ function tileSpan(listings: number, max: number) {
 }
 
 function HomePage() {
-  const { overview: initialOverview, initialOffers } = Route.useLoaderData();
+  const { overview: initialOverview, initialOffers, initialSponsored } = Route.useLoaderData();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const { cat: category, type: postType, ai: smartTerm, page } = search;
@@ -204,6 +216,15 @@ function HomePage() {
   });
 
   const data = smartActive ? smartData : browseData;
+
+  // Ads are matched to the category being browsed; smart search runs untargeted.
+  const adCategory = smartActive ? "all" : category;
+  const { data: sponsored } = useQuery({
+    ...sponsoredQuery(adCategory),
+    ...(adCategory === "all" ? { initialData: initialSponsored } : {}),
+    placeholderData: (previous) => previous,
+  });
+
   const isFetching = smartActive ? smartFetching : browseFetching;
   const interpretation = smartActive ? smartData?.interpretation : undefined;
   const offers = data?.offers ?? [];
@@ -645,7 +666,11 @@ function HomePage() {
                   isFetching ? "opacity-60" : ""
                 }`}
               >
-                {offers.map((offer) => (
+                {offers.slice(0, 3).map((offer) => (
+                  <OfferCard key={offer.publicId} offer={offer} />
+                ))}
+                {sponsored && <SponsoredCard key={`ad-${sponsored.id}`} ad={sponsored} />}
+                {offers.slice(3).map((offer) => (
                   <OfferCard key={offer.publicId} offer={offer} />
                 ))}
               </div>

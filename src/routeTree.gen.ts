@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AdvertiseRouteImport } from './routes/advertise'
 import { Route as CookiePolicyRouteImport } from './routes/cookie-policy'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as LoginRouteImport } from './routes/login'
@@ -19,6 +21,7 @@ import { Route as ScamDatabaseRouteImport } from './routes/scam-database'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TermsOfUseRouteImport } from './routes/terms-of-use'
 import { Route as ThankYouRouteImport } from './routes/thank-you'
+import { Route as GoAdIdRouteImport } from './routes/go.$adId'
 import { Route as OffersOfferIdRouteImport } from './routes/offers.$offerId'
 import { Route as SellerSellerIdRouteImport } from './routes/seller.$sellerId'
 import { Route as TradeOfferIdRouteImport } from './routes/trade.$offerId'
@@ -35,6 +38,16 @@ const IndexRoute = IndexRouteImport.update({
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdvertiseRoute = AdvertiseRouteImport.update({
+  id: '/advertise',
+  path: '/advertise',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CookiePolicyRoute = CookiePolicyRouteImport.update({
@@ -77,6 +90,11 @@ const ThankYouRoute = ThankYouRouteImport.update({
   path: '/thank-you',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GoAdIdRoute = GoAdIdRouteImport.update({
+  id: '/go/$adId',
+  path: '/go/$adId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OffersOfferIdRoute = OffersOfferIdRouteImport.update({
   id: '/offers/$offerId',
   path: '/offers/$offerId',
@@ -116,6 +134,8 @@ const ApiAuthDiscordLoginRoute = ApiAuthDiscordLoginRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/admin': typeof AdminRoute
+  '/advertise': typeof AdvertiseRoute
   '/cookie-policy': typeof CookiePolicyRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
@@ -124,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-of-use': typeof TermsOfUseRoute
   '/thank-you': typeof ThankYouRoute
+  '/go/$adId': typeof GoAdIdRoute
   '/offers/$offerId': typeof OffersOfferIdRoute
   '/seller/$sellerId': typeof SellerSellerIdRoute
   '/trade/$offerId': typeof TradeOfferIdRoute
@@ -135,6 +156,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/admin': typeof AdminRoute
+  '/advertise': typeof AdvertiseRoute
   '/cookie-policy': typeof CookiePolicyRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
@@ -143,6 +166,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-of-use': typeof TermsOfUseRoute
   '/thank-you': typeof ThankYouRoute
+  '/go/$adId': typeof GoAdIdRoute
   '/offers/$offerId': typeof OffersOfferIdRoute
   '/seller/$sellerId': typeof SellerSellerIdRoute
   '/trade/$offerId': typeof TradeOfferIdRoute
@@ -155,6 +179,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/admin': typeof AdminRoute
+  '/advertise': typeof AdvertiseRoute
   '/cookie-policy': typeof CookiePolicyRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
@@ -163,6 +189,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-of-use': typeof TermsOfUseRoute
   '/thank-you': typeof ThankYouRoute
+  '/go/$adId': typeof GoAdIdRoute
   '/offers/$offerId': typeof OffersOfferIdRoute
   '/seller/$sellerId': typeof SellerSellerIdRoute
   '/trade/$offerId': typeof TradeOfferIdRoute
@@ -176,6 +203,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/admin'
+    | '/advertise'
     | '/cookie-policy'
     | '/dashboard'
     | '/login'
@@ -184,6 +213,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms-of-use'
     | '/thank-you'
+    | '/go/$adId'
     | '/offers/$offerId'
     | '/seller/$sellerId'
     | '/trade/$offerId'
@@ -195,6 +225,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/admin'
+    | '/advertise'
     | '/cookie-policy'
     | '/dashboard'
     | '/login'
@@ -203,6 +235,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms-of-use'
     | '/thank-you'
+    | '/go/$adId'
     | '/offers/$offerId'
     | '/seller/$sellerId'
     | '/trade/$offerId'
@@ -214,6 +247,8 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/about'
+    | '/admin'
+    | '/advertise'
     | '/cookie-policy'
     | '/dashboard'
     | '/login'
@@ -222,6 +257,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms-of-use'
     | '/thank-you'
+    | '/go/$adId'
     | '/offers/$offerId'
     | '/seller/$sellerId'
     | '/trade/$offerId'
@@ -234,6 +270,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  AdminRoute: typeof AdminRoute
+  AdvertiseRoute: typeof AdvertiseRoute
   CookiePolicyRoute: typeof CookiePolicyRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
@@ -242,6 +280,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsOfUseRoute: typeof TermsOfUseRoute
   ThankYouRoute: typeof ThankYouRoute
+  GoAdIdRoute: typeof GoAdIdRoute
   OffersOfferIdRoute: typeof OffersOfferIdRoute
   SellerSellerIdRoute: typeof SellerSellerIdRoute
   TradeOfferIdRoute: typeof TradeOfferIdRoute
@@ -265,6 +304,20 @@ declare module '@tanstack/react-router' {
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/advertise': {
+      id: '/advertise'
+      path: '/advertise'
+      fullPath: '/advertise'
+      preLoaderRoute: typeof AdvertiseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cookie-policy': {
@@ -323,6 +376,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ThankYouRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/go/$adId': {
+      id: '/go/$adId'
+      path: '/go/$adId'
+      fullPath: '/go/$adId'
+      preLoaderRoute: typeof GoAdIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/offers/$offerId': {
       id: '/offers/$offerId'
       path: '/offers/$offerId'
@@ -378,6 +438,8 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  AdminRoute: AdminRoute,
+  AdvertiseRoute: AdvertiseRoute,
   CookiePolicyRoute: CookiePolicyRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
@@ -386,6 +448,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsOfUseRoute: TermsOfUseRoute,
   ThankYouRoute: ThankYouRoute,
+  GoAdIdRoute: GoAdIdRoute,
   OffersOfferIdRoute: OffersOfferIdRoute,
   SellerSellerIdRoute: SellerSellerIdRoute,
   TradeOfferIdRoute: TradeOfferIdRoute,

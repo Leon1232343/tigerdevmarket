@@ -65,6 +65,7 @@ export type OfferRow = {
   server_name: string | null;
   timestamp: Date | string | null;
   verified?: boolean | null;
+  boosted?: boolean | null;
   review_count?: number | null;
   avg_score?: number | null;
 };
@@ -185,6 +186,8 @@ export function mapOffer(row: OfferRow): OfferDTO {
     postedAt: row.timestamp ? new Date(row.timestamp).toISOString() : null,
     scamWarning: scamWarning(row, verified),
     originalUrl: row.jump_link ?? "#original-post",
+    pinned: Boolean(row.is_pinned),
+    boosted: Boolean(row.boosted),
   };
 }
 
@@ -194,12 +197,14 @@ export const SELECT_COLUMNS = `
   o.description, o.jump_link, o.image_url, o.rating_score, o.is_pinned, o.source,
   o.server_name, o.timestamp,
   (v.user_id IS NOT NULL) AS verified,
+  (bu.user_id IS NOT NULL) AS boosted,
   COALESCE(r.review_count, 0) AS review_count,
   r.avg_score
 `;
 
 export const JOINS = `
   LEFT JOIN verified_users v ON v.user_id = o.seller_id
+  LEFT JOIN boosted_users bu ON bu.user_id = o.seller_id AND bu.expires_at > now()
   LEFT JOIN (
     SELECT offer_id, COUNT(*)::int AS review_count, AVG(score)::real AS avg_score
     FROM ratings GROUP BY offer_id
@@ -252,9 +257,12 @@ export async function listOffers(params: ListParams) {
   );
   const total = Number(countRows[0]?.total ?? 0);
 
+  // Boosted sellers rank above regular listings in the default view; pinned
+  // offers still rank first because that is what sortSql("newest") starts with.
+  const boostedFirst = filters.sort === "newest" ? "(bu.user_id IS NOT NULL) DESC, " : "";
   const rows = await query<OfferRow>(
     `SELECT ${SELECT_COLUMNS} FROM offers o ${JOINS} ${whereSql}
-     ORDER BY ${sortSql(filters.sort)}
+     ORDER BY ${boostedFirst}${sortSql(filters.sort)}
      LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
     [...values, perPage, (page - 1) * perPage],
   );

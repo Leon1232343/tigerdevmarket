@@ -103,6 +103,8 @@ function OfferDetailPage() {
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="chip">{typeLabel}</span>
               <span className="chip">{offer.category}</span>
+              {offer.pinned && <span className="chip border-gold/40 text-gold">Featured</span>}
+              {offer.boosted && <span className="chip border-accent/40 text-accent">Boosted</span>}
               {offer.verified && <span className="chip border-gold/40 text-gold">Verified ✓</span>}
               <span className="chip capitalize">{offer.source}</span>
               {offer.postedAt && (

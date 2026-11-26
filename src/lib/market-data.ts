@@ -52,4 +52,8 @@ export type Offer = {
   postedAt: string | null;
   scamWarning?: string | undefined;
   originalUrl: string;
+  /** Pinned by the Tiger Market team — shown as “Featured” and sorted first. */
+  pinned?: boolean;
+  /** Seller has an active boost — shown as “Boosted”. */
+  boosted?: boolean;
 };

@@ -66,6 +66,8 @@ export function OfferCard({ offer }: { offer: Offer }) {
             {POST_TYPES.find((t) => t.value === offer.postType)?.label}
           </span>
           <span className="chip">{offer.category}</span>
+          {offer.pinned && <span className="chip border-gold/40 text-gold">Featured</span>}
+          {offer.boosted && <span className="chip border-accent/40 text-accent">Boosted</span>}
           {offer.verified && <span className="chip border-gold/40 text-gold">Verified ✓</span>}
           <span className="chip capitalize">{offer.source}</span>
           {offer.postedAt && (
