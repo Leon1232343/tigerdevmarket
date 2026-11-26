@@ -15,6 +15,13 @@
       "when": 1795716878265,
       "tag": "0001_favorites_saved_searches",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795717400000,
+      "tag": "0002_saved_search_last_seen",
+      "breakpoints": true
     }
   ]
 }

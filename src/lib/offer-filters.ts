@@ -39,12 +39,12 @@ export type BrowseFilters = {
   withImages: boolean;
 };
 
-const CURRENCY_PATTERNS: Record<string, string[]> = {
+export const CURRENCY_PATTERNS: Record<string, string[]> = {
   robux: ["%r$%", "%robux%", "%rbx%"],
   usd: ["%$%", "%usd%", "%dollar%"],
   eur: ["%€%", "%eur%"],
 };
-const PAYMENT_PATTERNS: Record<string, string[]> = {
+export const PAYMENT_PATTERNS: Record<string, string[]> = {
   robux: ["%robux%", "%r$%", "%rbx%"],
   paypal: ["%paypal%"],
   usd: ["%usd%", "%$%", "%dollar%"],
@@ -52,8 +52,10 @@ const PAYMENT_PATTERNS: Record<string, string[]> = {
 };
 
 /** Sane price bounds, matching formatPrice so sort/filter agree with what cards show. */
-const SANE_LO = "(CASE WHEN coalesce(nullif(o.price_min,0), o.price_max) BETWEEN 10 AND 5000000 THEN coalesce(nullif(o.price_min,0), o.price_max) END)";
-const SANE_HI = "(CASE WHEN coalesce(nullif(o.price_max,0), o.price_min) BETWEEN 10 AND 5000000 THEN coalesce(nullif(o.price_max,0), o.price_min) END)";
+const SANE_LO =
+  "(CASE WHEN coalesce(nullif(o.price_min,0), o.price_max) BETWEEN 10 AND 5000000 THEN coalesce(nullif(o.price_min,0), o.price_max) END)";
+const SANE_HI =
+  "(CASE WHEN coalesce(nullif(o.price_max,0), o.price_min) BETWEEN 10 AND 5000000 THEN coalesce(nullif(o.price_max,0), o.price_min) END)";
 
 export function sortSql(sort: string): string {
   const tail = "o.timestamp DESC NULLS LAST";
@@ -99,13 +101,19 @@ export function applyBrowseFilters(f: BrowseFilters, where: string[], values: un
   if (f.withImages) where.push("coalesce(o.image_url,'') ILIKE 'http%'");
 }
 
-export function normalizeFilters(input: Partial<Record<keyof BrowseFilters, unknown>> | undefined): BrowseFilters {
+export function normalizeFilters(
+  input: Partial<Record<keyof BrowseFilters, unknown>> | undefined,
+): BrowseFilters {
   const num = (v: unknown) => {
     const n = Number(v);
-    return v === null || v === undefined || v === "" || !Number.isFinite(n) || n < 0 ? null : Math.floor(n);
+    return v === null || v === undefined || v === "" || !Number.isFinite(n) || n < 0
+      ? null
+      : Math.floor(n);
   };
   const sort = SORT_OPTIONS.some((s) => s.value === input?.sort) ? String(input?.sort) : "newest";
-  const currency = CURRENCIES.some((c) => c.value === input?.currency) ? String(input?.currency) : "robux";
+  const currency = CURRENCIES.some((c) => c.value === input?.currency)
+    ? String(input?.currency)
+    : "robux";
   const payments = Array.isArray(input?.payments)
     ? input.payments.filter((p): p is string => PAYMENT_FILTERS.some((x) => x.value === p))
     : [];

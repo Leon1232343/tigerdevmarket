@@ -17,7 +17,9 @@ export const Route = createFileRoute("/seller/$sellerId")({
   head: ({ params, loaderData }) => {
     const url = `${SITE_URL}/seller/${params.sellerId}`;
     const s = loaderData?.seller;
-    const title = s ? `${s.name} — Roblox developer profile · Tiger Market` : "Seller profile — Tiger Market";
+    const title = s
+      ? `${s.name} — Roblox developer profile · Tiger Market`
+      : "Seller profile — Tiger Market";
     const description = s
       ? `${s.name} has ${s.activeOffers} active offer${s.activeOffers === 1 ? "" : "s"} on Tiger Market${s.categories.length ? ` in ${s.categories.slice(0, 3).join(", ")}` : ""}.`
       : "Roblox developer profile on Tiger Market.";
@@ -50,7 +52,9 @@ export const Route = createFileRoute("/seller/$sellerId")({
   notFoundComponent: () => (
     <div className="mx-auto max-w-xl px-4 py-24 text-center text-sm">
       This seller has no offers on Tiger Market.{" "}
-      <Link to="/" className="text-accent">Browse offers</Link>
+      <Link to="/" className="text-accent">
+        Browse offers
+      </Link>
     </div>
   ),
   component: SellerPage,
@@ -65,21 +69,42 @@ function SellerPage() {
         <Breadcrumbs items={[{ label: "Home", to: "/" }, { label: seller.name }]} />
         <section className="surface mt-4 p-5 sm:p-6">
           <div className="flex flex-wrap items-center gap-4">
-            <span aria-hidden="true" className="flex h-14 w-14 items-center justify-center rounded-full bg-elevated text-lg font-semibold text-accent">
+            <span
+              aria-hidden="true"
+              className="flex h-14 w-14 items-center justify-center rounded-full bg-elevated text-lg font-semibold text-accent"
+            >
               {seller.name.slice(0, 2).toUpperCase()}
             </span>
             <div className="min-w-0">
               <h1 className="truncate text-2xl font-bold">{seller.name}</h1>
               <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                {seller.verified ? <span className="chip border-gold/40 text-gold">Verified ✓</span> : <span className="chip">Not verified</span>}
-                {seller.reviews > 0 && <span className="chip border-accent/40 text-accent">{seller.reviews} confirmed deal{seller.reviews === 1 ? "" : "s"}</span>}
-                {seller.memberSince && <span suppressHydrationWarning>First offer {relativeTime(seller.memberSince)}</span>}
+                {seller.verified ? (
+                  <span className="chip border-gold/40 text-gold">Verified ✓</span>
+                ) : (
+                  <span className="chip">Not verified</span>
+                )}
+                {seller.reviews > 0 && (
+                  <span className="chip border-accent/40 text-accent">
+                    {seller.reviews} review{seller.reviews === 1 ? "" : "s"}
+                  </span>
+                )}
+                {seller.memberSince && (
+                  <span suppressHydrationWarning>
+                    First offer {relativeTime(seller.memberSince)}
+                  </span>
+                )}
               </div>
             </div>
-            <div className="ml-auto"><Stars rating={seller.rating} reviews={seller.reviews} size="lg" /></div>
+            <div className="ml-auto">
+              <Stars rating={seller.rating} reviews={seller.reviews} size="lg" />
+            </div>
           </div>
           <dl className="mt-5 grid grid-cols-3 gap-3 text-center">
-            {[["Active offers", seller.activeOffers], ["All-time offers", seller.totalOffers], ["Reviews", seller.reviews]].map(([k, v]) => (
+            {[
+              ["Active offers", seller.activeOffers],
+              ["All-time offers", seller.totalOffers],
+              ["Reviews", seller.reviews],
+            ].map(([k, v]) => (
               <div key={k} className="rounded-md border border-border p-3">
                 <dt className="text-[11px] text-muted-foreground">{k}</dt>
                 <dd className="font-mono text-lg">{v}</dd>
@@ -88,7 +113,11 @@ function SellerPage() {
           </dl>
           {seller.categories.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-1.5">
-              {seller.categories.map((c) => <span key={c} className="chip">{c}</span>)}
+              {seller.categories.map((c) => (
+                <span key={c} className="chip">
+                  {c}
+                </span>
+              ))}
             </div>
           )}
           {!seller.verified && (
@@ -102,7 +131,9 @@ function SellerPage() {
           <p className="text-sm text-muted-foreground">No active offers in the last 30 days.</p>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {seller.offers.map((o) => <OfferCard key={o.publicId} offer={o} />)}
+            {seller.offers.map((o) => (
+              <OfferCard key={o.publicId} offer={o} />
+            ))}
           </div>
         )}
       </main>

@@ -7,6 +7,7 @@ import { SiteNav } from "@/components/market/SiteNav";
 import { SafetyBanner } from "@/components/market/SafetyBanner";
 import { SiteFooter } from "@/components/market/SiteFooter";
 import { OfferCard } from "@/components/market/OfferCard";
+import { SaveSearchButton } from "@/components/market/SaveSearchButton";
 import { POST_TYPES } from "@/lib/market-data";
 import {
   CURRENCIES,
@@ -18,6 +19,7 @@ import {
 import { fetchMarketOverview, fetchOffers, type OfferListInput } from "@/lib/offers.functions";
 import { smartSearch } from "@/lib/smart-search.functions";
 import { SITE_URL, socialImageMeta } from "@/lib/site";
+import { sanitizeSavedSearchParams } from "@/lib/library-params";
 
 const overviewQuery = queryOptions({
   queryKey: ["market-overview"],
@@ -51,7 +53,6 @@ function smartQueryOptions(search: string, page: number) {
     staleTime: 60_000,
   });
 }
-
 
 const searchSchema = z.object({
   cat: fallback(z.string(), "all").default("all"),
@@ -111,9 +112,7 @@ export const Route = createFileRoute("/")({
   loader: async ({ context }) => {
     const [overview, initialOffers] = await Promise.all([
       context.queryClient.ensureQueryData(overviewQuery),
-      context.queryClient.ensureQueryData(
-        offersQuery(DEFAULT_INPUT),
-      ),
+      context.queryClient.ensureQueryData(offersQuery(DEFAULT_INPUT)),
     ]);
     return { overview, initialOffers };
   },
@@ -228,17 +227,27 @@ function HomePage() {
     });
   if (search.q) chips.push({ key: "q", label: `“${search.q}”`, clear: { q: "" } });
   if (filters.minPrice !== null)
-    chips.push({ key: "min", label: `≥ ${filters.minPrice.toLocaleString("en-US")} ${currencyLabel}`, clear: { min: undefined } });
+    chips.push({
+      key: "min",
+      label: `≥ ${filters.minPrice.toLocaleString("en-US")} ${currencyLabel}`,
+      clear: { min: undefined },
+    });
   if (filters.maxPrice !== null)
-    chips.push({ key: "max", label: `≤ ${filters.maxPrice.toLocaleString("en-US")} ${currencyLabel}`, clear: { max: undefined } });
+    chips.push({
+      key: "max",
+      label: `≤ ${filters.maxPrice.toLocaleString("en-US")} ${currencyLabel}`,
+      clear: { max: undefined },
+    });
   for (const p of filters.payments)
     chips.push({
       key: `pay-${p}`,
       label: PAYMENT_FILTERS.find((x) => x.value === p)?.label ?? p,
       clear: { pay: filters.payments.filter((x) => x !== p) },
     });
-  if (filters.verifiedOnly) chips.push({ key: "verified", label: "Verified only", clear: { verified: false } });
-  if (filters.withImages) chips.push({ key: "images", label: "With images", clear: { images: false } });
+  if (filters.verifiedOnly)
+    chips.push({ key: "verified", label: "Verified only", clear: { verified: false } });
+  if (filters.withImages)
+    chips.push({ key: "images", label: "With images", clear: { images: false } });
   if (filters.sort !== "newest")
     chips.push({
       key: "sort",
@@ -252,7 +261,10 @@ function HomePage() {
   }
 
   function applyPrice() {
-    const toNum = (v: string) => (v.trim() === "" || !Number.isFinite(Number(v)) ? undefined : Math.max(0, Math.floor(Number(v))));
+    const toNum = (v: string) =>
+      v.trim() === "" || !Number.isFinite(Number(v))
+        ? undefined
+        : Math.max(0, Math.floor(Number(v)));
     update({ min: toNum(minDraft), max: toNum(maxDraft), ai: "" });
   }
 
@@ -422,7 +434,9 @@ function HomePage() {
 
           <div className="surface mt-6 grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <label htmlFor="filter-category" className="sr-only">Category</label>
+              <label htmlFor="filter-category" className="sr-only">
+                Category
+              </label>
               <select
                 id="filter-category"
                 className="field"
@@ -431,12 +445,16 @@ function HomePage() {
               >
                 <option value="all">All categories</option>
                 {overview.categories.map((cat) => (
-                  <option key={cat.slug} value={cat.name}>{cat.name}</option>
+                  <option key={cat.slug} value={cat.name}>
+                    {cat.name}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
-              <label htmlFor="filter-type" className="sr-only">Post type</label>
+              <label htmlFor="filter-type" className="sr-only">
+                Post type
+              </label>
               <select
                 id="filter-type"
                 className="field"
@@ -445,12 +463,16 @@ function HomePage() {
               >
                 <option value="all">All post types</option>
                 {POST_TYPES.map((type) => (
-                  <option key={type.value} value={type.value}>{type.label}</option>
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
-              <label htmlFor="filter-sort" className="sr-only">Sort by</label>
+              <label htmlFor="filter-sort" className="sr-only">
+                Sort by
+              </label>
               <select
                 id="filter-sort"
                 className="field"
@@ -458,12 +480,16 @@ function HomePage() {
                 onChange={(event) => update({ sort: event.target.value, ai: "" })}
               >
                 {SORT_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
-              <label htmlFor="filter-search" className="sr-only">Search offers</label>
+              <label htmlFor="filter-search" className="sr-only">
+                Search offers
+              </label>
               <input
                 id="filter-search"
                 type="search"
@@ -484,11 +510,33 @@ function HomePage() {
                 applyPrice();
               }}
             >
-              <label htmlFor="filter-min" className="sr-only">Minimum price</label>
-              <input id="filter-min" inputMode="numeric" className="field font-mono" placeholder="Min" value={minDraft} onChange={(e) => setMinDraft(e.target.value.replace(/[^\d]/g, ""))} onBlur={applyPrice} />
-              <span aria-hidden="true" className="text-muted-foreground">–</span>
-              <label htmlFor="filter-max" className="sr-only">Maximum price</label>
-              <input id="filter-max" inputMode="numeric" className="field font-mono" placeholder="Max" value={maxDraft} onChange={(e) => setMaxDraft(e.target.value.replace(/[^\d]/g, ""))} onBlur={applyPrice} />
+              <label htmlFor="filter-min" className="sr-only">
+                Minimum price
+              </label>
+              <input
+                id="filter-min"
+                inputMode="numeric"
+                className="field font-mono"
+                placeholder="Min"
+                value={minDraft}
+                onChange={(e) => setMinDraft(e.target.value.replace(/[^\d]/g, ""))}
+                onBlur={applyPrice}
+              />
+              <span aria-hidden="true" className="text-muted-foreground">
+                –
+              </span>
+              <label htmlFor="filter-max" className="sr-only">
+                Maximum price
+              </label>
+              <input
+                id="filter-max"
+                inputMode="numeric"
+                className="field font-mono"
+                placeholder="Max"
+                value={maxDraft}
+                onChange={(e) => setMaxDraft(e.target.value.replace(/[^\d]/g, ""))}
+                onBlur={applyPrice}
+              />
               <div role="group" aria-label="Currency" className="flex shrink-0 gap-1">
                 {CURRENCIES.map((c) => (
                   <button
@@ -504,7 +552,11 @@ function HomePage() {
               </div>
             </form>
 
-            <div role="group" aria-label="Payment method" className="flex flex-wrap items-center gap-1 sm:col-span-2">
+            <div
+              role="group"
+              aria-label="Payment method"
+              className="flex flex-wrap items-center gap-1 sm:col-span-2"
+            >
               <span className="mr-1 text-xs text-muted-foreground">Payment:</span>
               {PAYMENT_FILTERS.map((p) => {
                 const on = filters.payments.includes(p.value);
@@ -516,7 +568,9 @@ function HomePage() {
                     className={`chip cursor-pointer ${on ? "border-accent text-accent" : ""}`}
                     onClick={() =>
                       update({
-                        pay: on ? filters.payments.filter((x) => x !== p.value) : [...filters.payments, p.value],
+                        pay: on
+                          ? filters.payments.filter((x) => x !== p.value)
+                          : [...filters.payments, p.value],
                         ai: "",
                       })
                     }
@@ -526,11 +580,21 @@ function HomePage() {
                 );
               })}
               <label className="ml-auto flex cursor-pointer items-center gap-1.5 text-xs">
-                <input type="checkbox" className="accent-[var(--accent)]" checked={filters.verifiedOnly} onChange={(e) => update({ verified: e.target.checked, ai: "" })} />
+                <input
+                  type="checkbox"
+                  className="accent-[var(--accent)]"
+                  checked={filters.verifiedOnly}
+                  onChange={(e) => update({ verified: e.target.checked, ai: "" })}
+                />
                 Verified only
               </label>
               <label className="ml-3 flex cursor-pointer items-center gap-1.5 text-xs">
-                <input type="checkbox" className="accent-[var(--accent)]" checked={filters.withImages} onChange={(e) => update({ images: e.target.checked, ai: "" })} />
+                <input
+                  type="checkbox"
+                  className="accent-[var(--accent)]"
+                  checked={filters.withImages}
+                  onChange={(e) => update({ images: e.target.checked, ai: "" })}
+                />
                 With images
               </label>
             </div>
@@ -555,6 +619,22 @@ function HomePage() {
               <button type="button" className="btn-ghost text-xs" onClick={clearAll}>
                 Clear all
               </button>
+              <span className="ml-auto">
+                <SaveSearchButton
+                  params={sanitizeSavedSearchParams({
+                    cat: category,
+                    type: postType,
+                    q: search.q,
+                    sort: filters.sort,
+                    min: filters.minPrice,
+                    max: filters.maxPrice,
+                    cur: filters.currency,
+                    pay: filters.payments,
+                    verified: filters.verifiedOnly,
+                    images: filters.withImages,
+                  })}
+                />
+              </span>
             </div>
           )}
 
@@ -570,7 +650,10 @@ function HomePage() {
                 ))}
               </div>
 
-              <nav aria-label="Pagination" className="mt-8 flex items-center justify-center gap-3 text-sm">
+              <nav
+                aria-label="Pagination"
+                className="mt-8 flex items-center justify-center gap-3 text-sm"
+              >
                 <button
                   type="button"
                   className="btn-ghost disabled:opacity-40"
@@ -593,7 +676,11 @@ function HomePage() {
               </nav>
             </>
           ) : isFetching ? (
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true" aria-label="Loading offers">
+            <div
+              className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+              aria-busy="true"
+              aria-label="Loading offers"
+            >
               {Array.from({ length: 6 }, (_, i) => (
                 <div key={i} className="surface h-44 animate-pulse p-4">
                   <div className="h-3 w-1/3 rounded bg-muted" />
@@ -605,14 +692,20 @@ function HomePage() {
             </div>
           ) : (
             <div className="surface mt-6 flex flex-col items-center gap-3 px-6 py-16 text-center">
-              <span aria-hidden="true" className="text-3xl">🐯</span>
+              <span aria-hidden="true" className="text-3xl">
+                🐯
+              </span>
               <h3 className="text-base font-semibold">No offers found</h3>
               <p className="max-w-sm text-xs text-muted-foreground">
                 Try broader filters — or post your own offer and let developers find you.
               </p>
               <div className="mt-1 flex flex-wrap justify-center gap-2">
-                <button type="button" className="btn-ghost" onClick={clearAll}>Clear filters</button>
-                <Link to="/post-offer" className="btn-accent">Post an offer</Link>
+                <button type="button" className="btn-ghost" onClick={clearAll}>
+                  Clear filters
+                </button>
+                <Link to="/post-offer" className="btn-accent">
+                  Post an offer
+                </Link>
               </div>
             </div>
           )}

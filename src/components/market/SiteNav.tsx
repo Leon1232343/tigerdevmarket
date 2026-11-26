@@ -21,9 +21,7 @@ export function SiteNav() {
           <span aria-hidden="true" className="text-lg">
             🐯
           </span>
-          <span className="font-display text-base font-semibold tracking-tight">
-            Tiger Market
-          </span>
+          <span className="font-display text-base font-semibold tracking-tight">Tiger Market</span>
         </Link>
 
         <div className="hidden items-center gap-6 text-sm text-muted-foreground md:flex">
@@ -39,12 +37,20 @@ export function SiteNav() {
           <Link to="/about" className="transition-colors hover:text-foreground">
             About
           </Link>
+          {user && (
+            <Link to="/dashboard" className="transition-colors hover:text-foreground">
+              Dashboard
+            </Link>
+          )}
         </div>
-
 
         {user ? (
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-2 text-sm">
+            <Link
+              to="/dashboard"
+              className="flex items-center gap-2 text-sm underline-offset-4 hover:text-accent hover:underline"
+              title="Your dashboard"
+            >
               {user.avatarUrl ? (
                 <img
                   src={user.avatarUrl}
@@ -63,7 +69,7 @@ export function SiteNav() {
                 </span>
               )}
               <span className="hidden sm:inline">{user.displayName ?? user.username}</span>
-            </span>
+            </Link>
             {/* Logout is a POST form so it can't be triggered by a stray GET. */}
             <form method="post" action="/api/auth/logout">
               <input type="hidden" name="returnTo" value={pathname} />

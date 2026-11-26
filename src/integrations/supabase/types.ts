@@ -70,6 +70,7 @@ export type Database = {
           created_at: string
           id: string
           label: string
+          last_seen_at: string
           params: Json
           user_id: string
         }
@@ -77,6 +78,7 @@ export type Database = {
           created_at?: string
           id?: string
           label: string
+          last_seen_at?: string
           params?: Json
           user_id: string
         }
@@ -84,6 +86,7 @@ export type Database = {
           created_at?: string
           id?: string
           label?: string
+          last_seen_at?: string
           params?: Json
           user_id?: string
         }

@@ -8,8 +8,9 @@ import { responsiveOfferImage } from "@/lib/offer-images";
 import { fetchOffer } from "@/lib/offers.functions";
 import { Breadcrumbs } from "@/components/market/Breadcrumbs";
 import { SafetyBox } from "@/components/market/SafetyBox";
+import { FavoriteButton } from "@/components/market/FavoriteButton";
+import { RateOffer } from "@/components/market/RateOffer";
 import { SITE_URL, breadcrumbJsonLd, socialImageMeta } from "@/lib/site";
-
 
 export const Route = createFileRoute("/offers/$offerId")({
   loader: async ({ params }): Promise<{ offer: Offer }> => {
@@ -19,8 +20,7 @@ export const Route = createFileRoute("/offers/$offerId")({
   },
   errorComponent: ({ error }) => (
     <div role="alert" className="mx-auto max-w-xl px-4 py-24 text-center text-sm">
-      Could not load this offer.{" "}
-      {error instanceof Error ? error.message : "Please try again."}
+      Could not load this offer. {error instanceof Error ? error.message : "Please try again."}
     </div>
   ),
   notFoundComponent: () => (
@@ -65,7 +65,6 @@ function OfferDetailPage() {
   const hero = responsiveOfferImage(offer.imageUrl, 640, 16 / 9);
   const typeLabel =
     POST_TYPES.find((type) => type.value === offer.postType)?.label ?? offer.postType;
-
 
   return (
     <div className="min-h-screen">
@@ -125,7 +124,11 @@ function OfferDetailPage() {
                   {offer.seller.slice(0, 2).toUpperCase()}
                 </span>
                 {offer.sellerId ? (
-                  <Link to="/seller/$sellerId" params={{ sellerId: offer.sellerId }} className="hover:text-accent underline-offset-4 hover:underline">
+                  <Link
+                    to="/seller/$sellerId"
+                    params={{ sellerId: offer.sellerId }}
+                    className="hover:text-accent underline-offset-4 hover:underline"
+                  >
                     {offer.seller}
                   </Link>
                 ) : (
@@ -155,7 +158,6 @@ function OfferDetailPage() {
               </div>
             )}
 
-
             <div className="mt-6 space-y-3 text-sm leading-relaxed text-muted-foreground">
               {offer.description.map((paragraph) => (
                 <p key={paragraph}>{paragraph}</p>
@@ -175,6 +177,7 @@ function OfferDetailPage() {
               <a href={offer.originalUrl} className="btn-ghost">
                 View original post ↗
               </a>
+              <FavoriteButton offerId={offer.publicId} variant="inline" />
               <Link
                 to="/trade/$offerId"
                 params={{ offerId: offer.publicId }}
@@ -189,6 +192,7 @@ function OfferDetailPage() {
             </p>
           </div>
         </article>
+        <RateOffer offerId={offer.publicId} sellerId={offer.sellerId} />
         <SafetyBox offer={offer} url={`${SITE_URL}/offers/${offer.publicId}`} />
       </main>
 

@@ -1,10 +1,16 @@
-import { applyBrowseFilters, normalizeFilters, sortSql, type BrowseFilters } from "@/lib/offer-filters";
+import {
+  applyBrowseFilters,
+  normalizeFilters,
+  sortSql,
+  type BrowseFilters,
+} from "@/lib/offer-filters";
 /**
  * Server-only access to the external Tiger Market offers database (Neon Postgres).
  * Never import this from client code.
  */
 import { Client } from "pg";
 import type { Offer, OfferSource, PostType } from "@/lib/market-data";
+import type { MatchableOffer } from "@/lib/saved-search-match";
 import { formatPrice, cleanTitle } from "@/lib/offer-format";
 import { dbClientConfig } from "@/lib/offers-db-config";
 
@@ -25,7 +31,6 @@ export async function query<T>(sql: string, params: unknown[] = []): Promise<T[]
     await client.end().catch(() => {});
   }
 }
-
 
 /** Canonical categories shown in the bento grid, matched against the CSV `category` column. */
 export const CANONICAL_CATEGORIES = [
@@ -66,7 +71,6 @@ export type OfferRow = {
 
 export type OfferDTO = Offer;
 
-
 export const POST_TYPE_MAP: Record<string, PostType> = {
   "for hire": "forhire",
   hiring: "hiring",
@@ -77,7 +81,7 @@ export const POST_TYPE_MAP: Record<string, PostType> = {
   "offering investment": "investment",
 };
 
-function toPostType(value: string | null): PostType {
+export function toPostType(value: string | null): PostType {
   return POST_TYPE_MAP[(value ?? "").trim().toLowerCase()] ?? "selling";
 }
 
@@ -327,6 +331,87 @@ export async function getAllOfferIds(): Promise<{ offerId: string; postedAt: str
   }));
 }
 
+/** Offers for a set of ids (favorites), keeping the order the caller passed in. */
+export async function listOffersByIds(ids: string[]): Promise<OfferDTO[]> {
+  const numeric = [
+    ...new Set(ids.map(Number).filter((id) => Number.isInteger(id) && id > 0)),
+  ].slice(0, 200);
+  if (numeric.length === 0) return [];
+
+  const rows = await query<OfferRow>(
+    `SELECT ${SELECT_COLUMNS} FROM offers o ${JOINS} WHERE o.offer_id = ANY($1::int[])`,
+    [numeric],
+  );
+  const byId = new Map(rows.map((row) => [String(row.offer_id), mapOffer(row)]));
+  return ids
+    .map((id) => byId.get(String(Number(id))))
+    .filter((offer): offer is OfferDTO => Boolean(offer));
+}
+
+/** Every offer of one seller, newest first — used by the member dashboard. */
+export async function listOffersBySeller(sellerId: string, limit = 100): Promise<OfferDTO[]> {
+  if (!/^[\w-]{1,40}$/.test(sellerId)) return [];
+  const rows = await query<OfferRow>(
+    `SELECT ${SELECT_COLUMNS} FROM offers o ${JOINS}
+      WHERE o.seller_id = $1
+      ORDER BY o.timestamp DESC NULLS LAST
+      LIMIT $2`,
+    [sellerId, Math.min(Math.max(limit, 1), 200)],
+  );
+  return rows.map(mapOffer);
+}
+
+export type MatchableOfferRow = MatchableOffer & { postedAt: string | null };
+
+/**
+ * Offers newer than a timestamp, shaped for the saved-search matcher. One query
+ * feeds every saved search, so the dashboard stays at a single Neon round trip.
+ */
+export async function listOffersForMatching(sinceIso: string): Promise<MatchableOfferRow[]> {
+  const rows = await query<{
+    offer_id: number;
+    category: string | null;
+    service_type: string | null;
+    post_type: string | null;
+    message_content: string | null;
+    seller_username: string | null;
+    price_display: string | null;
+    price_min: number | null;
+    price_max: number | null;
+    payment_method: string | null;
+    image_url: string | null;
+    timestamp: Date | string | null;
+    verified: boolean | null;
+  }>(
+    `SELECT o.offer_id, o.category, o.service_type, o.post_type, o.message_content,
+            o.seller_username, o.price_display, o.price_min, o.price_max, o.payment_method,
+            o.image_url, o.timestamp, (v.user_id IS NOT NULL) AS verified
+       FROM offers o LEFT JOIN verified_users v ON v.user_id = o.seller_id
+      WHERE o.timestamp > $1::timestamptz
+        AND o.timestamp > now() - interval '30 days'
+        AND o.message_content IS NOT NULL
+      ORDER BY o.timestamp DESC NULLS LAST
+      LIMIT 500`,
+    [sinceIso],
+  );
+
+  return rows.map((row) => ({
+    publicId: String(row.offer_id),
+    category: row.category,
+    serviceType: row.service_type,
+    postType: toPostType(row.post_type),
+    body: clean(row.message_content ?? "").slice(0, 4000),
+    seller: row.seller_username,
+    priceText: row.price_display,
+    priceMin: row.price_min,
+    priceMax: row.price_max,
+    paymentMethod: row.payment_method,
+    imageUrl: row.image_url,
+    verified: Boolean(row.verified),
+    postedAt: row.timestamp ? new Date(row.timestamp).toISOString() : null,
+  }));
+}
+
 /** Public seller profile: identity, stats and their active offers (quality-filtered). */
 export async function getSellerProfile(sellerId: string) {
   if (!/^[\w-]{1,40}$/.test(sellerId)) return null;
@@ -336,7 +421,14 @@ export async function getSellerProfile(sellerId: string) {
       ORDER BY o.timestamp DESC NULLS LAST LIMIT 48`,
     [sellerId],
   );
-  const [stats] = await query<{ total: string; first: Date | string | null; name: string | null; verified: boolean; reviews: string; avg: number | null }>(
+  const [stats] = await query<{
+    total: string;
+    first: Date | string | null;
+    name: string | null;
+    verified: boolean;
+    reviews: string;
+    avg: number | null;
+  }>(
     `SELECT COUNT(*)::text AS total, MIN(o.timestamp) AS first,
             (array_agg(o.seller_username ORDER BY o.timestamp DESC NULLS LAST))[1] AS name,
             bool_or(v.user_id IS NOT NULL) AS verified,

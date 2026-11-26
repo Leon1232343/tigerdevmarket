@@ -3,7 +3,13 @@ import { POST_TYPES, postTypeClass, type Offer } from "@/lib/market-data";
 import { relativeTime } from "@/lib/offer-format";
 import { responsiveOfferImage } from "@/lib/offer-images";
 import { Stars } from "./Stars";
+import { FavoriteButton } from "./FavoriteButton";
 
+/**
+ * The whole card is clickable through a stretched link; the favorite button
+ * sits above it so toggling never navigates (a button inside an <a> would be
+ * invalid HTML and would follow the link on every click).
+ */
 export function OfferCard({ offer }: { offer: Offer }) {
   const image = responsiveOfferImage(offer.imageUrl, 64);
 
@@ -12,15 +18,18 @@ export function OfferCard({ offer }: { offer: Offer }) {
       {/* Left strip encodes post type */}
       <span
         aria-hidden="true"
-        className={`absolute inset-y-0 left-0 w-[3px] ${postTypeClass[offer.postType]}`}
+        className={`absolute inset-y-0 left-0 z-20 w-[3px] ${postTypeClass[offer.postType]}`}
       />
 
       <Link
         to="/offers/$offerId"
         params={{ offerId: offer.publicId }}
-        className="flex h-full flex-col gap-3 p-4 pl-5"
-      >
-        <div className="flex items-center gap-3">
+        className="absolute inset-0 z-10 rounded-[inherit] focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
+        aria-label={`${offer.title} — ${offer.category} offer by ${offer.seller}`}
+      />
+
+      <div className="pointer-events-none flex h-full flex-col gap-3 p-4 pl-5">
+        <div className="flex items-center gap-3 pr-10">
           {image && (
             <img
               src={image.src}
@@ -46,7 +55,6 @@ export function OfferCard({ offer }: { offer: Offer }) {
           </div>
         </div>
 
-
         <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
           {offer.excerpt}
         </p>
@@ -58,12 +66,14 @@ export function OfferCard({ offer }: { offer: Offer }) {
             {POST_TYPES.find((t) => t.value === offer.postType)?.label}
           </span>
           <span className="chip">{offer.category}</span>
-          {offer.verified && (
-            <span className="chip border-gold/40 text-gold">Verified ✓</span>
-          )}
+          {offer.verified && <span className="chip border-gold/40 text-gold">Verified ✓</span>}
           <span className="chip capitalize">{offer.source}</span>
           {offer.postedAt && (
-            <time dateTime={offer.postedAt} className="ml-auto font-mono text-[11px] text-muted-foreground" suppressHydrationWarning>
+            <time
+              dateTime={offer.postedAt}
+              className="ml-auto font-mono text-[11px] text-muted-foreground"
+              suppressHydrationWarning
+            >
               {relativeTime(offer.postedAt)}
             </time>
           )}
@@ -73,7 +83,11 @@ export function OfferCard({ offer }: { offer: Offer }) {
           <Stars rating={offer.rating} reviews={offer.reviews} />
           <span className="price-tag">{offer.price}</span>
         </div>
-      </Link>
+      </div>
+
+      <div className="pointer-events-auto absolute top-2 right-2 z-20">
+        <FavoriteButton offerId={offer.publicId} />
+      </div>
     </article>
   );
 }
