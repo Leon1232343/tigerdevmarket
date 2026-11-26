@@ -14,6 +14,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as CookiePolicyRouteImport } from './routes/cookie-policy'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PostOfferRouteImport } from './routes/post-offer'
+import { Route as ScamDatabaseRouteImport } from './routes/scam-database'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TermsOfUseRouteImport } from './routes/terms-of-use'
 import { Route as ThankYouRouteImport } from './routes/thank-you'
@@ -48,6 +49,11 @@ const LoginRoute = LoginRouteImport.update({
 const PostOfferRoute = PostOfferRouteImport.update({
   id: '/post-offer',
   path: '/post-offer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScamDatabaseRoute = ScamDatabaseRouteImport.update({
+  id: '/scam-database',
+  path: '/scam-database',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -107,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/cookie-policy': typeof CookiePolicyRoute
   '/login': typeof LoginRoute
   '/post-offer': typeof PostOfferRoute
+  '/scam-database': typeof ScamDatabaseRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-of-use': typeof TermsOfUseRoute
   '/thank-you': typeof ThankYouRoute
@@ -124,6 +131,7 @@ export interface FileRoutesByTo {
   '/cookie-policy': typeof CookiePolicyRoute
   '/login': typeof LoginRoute
   '/post-offer': typeof PostOfferRoute
+  '/scam-database': typeof ScamDatabaseRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-of-use': typeof TermsOfUseRoute
   '/thank-you': typeof ThankYouRoute
@@ -142,6 +150,7 @@ export interface FileRoutesById {
   '/cookie-policy': typeof CookiePolicyRoute
   '/login': typeof LoginRoute
   '/post-offer': typeof PostOfferRoute
+  '/scam-database': typeof ScamDatabaseRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-of-use': typeof TermsOfUseRoute
   '/thank-you': typeof ThankYouRoute
@@ -161,6 +170,7 @@ export interface FileRouteTypes {
     | '/cookie-policy'
     | '/login'
     | '/post-offer'
+    | '/scam-database'
     | '/sitemap.xml'
     | '/terms-of-use'
     | '/thank-you'
@@ -178,6 +188,7 @@ export interface FileRouteTypes {
     | '/cookie-policy'
     | '/login'
     | '/post-offer'
+    | '/scam-database'
     | '/sitemap.xml'
     | '/terms-of-use'
     | '/thank-you'
@@ -195,6 +206,7 @@ export interface FileRouteTypes {
     | '/cookie-policy'
     | '/login'
     | '/post-offer'
+    | '/scam-database'
     | '/sitemap.xml'
     | '/terms-of-use'
     | '/thank-you'
@@ -213,6 +225,7 @@ export interface RootRouteChildren {
   CookiePolicyRoute: typeof CookiePolicyRoute
   LoginRoute: typeof LoginRoute
   PostOfferRoute: typeof PostOfferRoute
+  ScamDatabaseRoute: typeof ScamDatabaseRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsOfUseRoute: typeof TermsOfUseRoute
   ThankYouRoute: typeof ThankYouRoute
@@ -260,6 +273,13 @@ declare module '@tanstack/react-router' {
       path: '/post-offer'
       fullPath: '/post-offer'
       preLoaderRoute: typeof PostOfferRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scam-database': {
+      id: '/scam-database'
+      path: '/scam-database'
+      fullPath: '/scam-database'
+      preLoaderRoute: typeof ScamDatabaseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -341,6 +361,7 @@ const rootRouteChildren: RootRouteChildren = {
   CookiePolicyRoute: CookiePolicyRoute,
   LoginRoute: LoginRoute,
   PostOfferRoute: PostOfferRoute,
+  ScamDatabaseRoute: ScamDatabaseRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsOfUseRoute: TermsOfUseRoute,
   ThankYouRoute: ThankYouRoute,

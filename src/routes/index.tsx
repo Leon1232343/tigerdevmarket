@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { SiteNav } from "@/components/market/SiteNav";
+import { SafetyBanner } from "@/components/market/SafetyBanner";
 import { SiteFooter } from "@/components/market/SiteFooter";
 import { OfferCard } from "@/components/market/OfferCard";
 import { POST_TYPES } from "@/lib/market-data";
@@ -258,6 +259,7 @@ function HomePage() {
   return (
     <div className="min-h-screen">
       <SiteNav />
+      <SafetyBanner />
 
       <main>
         {/* Hero */}

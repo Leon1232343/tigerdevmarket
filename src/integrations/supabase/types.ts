@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      offer_reports: {
+        Row: {
+          created_at: string
+          details: string
+          id: string
+          offer_id: string
+          reason: string
+          seller_id: string | null
+          seller_name: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          details?: string
+          id?: string
+          offer_id: string
+          reason: string
+          seller_id?: string | null
+          seller_name?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          details?: string
+          id?: string
+          offer_id?: string
+          reason?: string
+          seller_id?: string | null
+          seller_name?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       security_events: {
         Row: {
           created_at: string

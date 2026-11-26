@@ -7,6 +7,7 @@ import { postTypeClass, POST_TYPES, type Offer } from "@/lib/market-data";
 import { responsiveOfferImage } from "@/lib/offer-images";
 import { fetchOffer } from "@/lib/offers.functions";
 import { Breadcrumbs } from "@/components/market/Breadcrumbs";
+import { SafetyBox } from "@/components/market/SafetyBox";
 import { SITE_URL, breadcrumbJsonLd, socialImageMeta } from "@/lib/site";
 
 
@@ -188,6 +189,7 @@ function OfferDetailPage() {
             </p>
           </div>
         </article>
+        <SafetyBox offer={offer} url={`${SITE_URL}/offers/${offer.publicId}`} />
       </main>
 
       <SiteFooter />

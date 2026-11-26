@@ -72,6 +72,7 @@ function SellerPage() {
               <h1 className="truncate text-2xl font-bold">{seller.name}</h1>
               <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                 {seller.verified ? <span className="chip border-gold/40 text-gold">Verified ✓</span> : <span className="chip">Not verified</span>}
+                {seller.reviews > 0 && <span className="chip border-accent/40 text-accent">{seller.reviews} confirmed deal{seller.reviews === 1 ? "" : "s"}</span>}
                 {seller.memberSince && <span suppressHydrationWarning>First offer {relativeTime(seller.memberSince)}</span>}
               </div>
             </div>
