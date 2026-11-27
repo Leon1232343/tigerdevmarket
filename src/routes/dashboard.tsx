@@ -8,6 +8,7 @@ import { Stars } from "@/components/market/Stars";
 import { isExpired, relativeTime } from "@/lib/offer-format";
 import { savedSearchHref } from "@/lib/library-params";
 import {
+  deleteMyOffer,
   fetchDashboard,
   markSavedSearchesSeen,
   type DashboardData,
@@ -55,7 +56,9 @@ function DashboardPage() {
   const router = useRouter();
   const markSeen = useServerFn(markSavedSearchesSeen);
   const removeSearch = useServerFn(deleteSavedSearch);
+  const removeOffer = useServerFn(deleteMyOffer);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [offerError, setOfferError] = useState<string | null>(null);
 
   useEffect(() => {
     // Counts are shown relative to the last visit; opening the tab is the visit.
@@ -70,6 +73,18 @@ function DashboardPage() {
       await router.invalidate();
     } catch (cause) {
       setSearchError(cause instanceof Error ? cause.message : "Could not delete this search.");
+    }
+  }
+
+  async function onDeleteOffer(offerId: string) {
+    if (!window.confirm("Delete this offer? It disappears from the marketplace for everyone."))
+      return;
+    setOfferError(null);
+    try {
+      await removeOffer({ data: { offerId } });
+      await router.invalidate();
+    } catch (cause) {
+      setOfferError(cause instanceof Error ? cause.message : "Could not delete this offer.");
     }
   }
 
@@ -161,7 +176,9 @@ function DashboardPage() {
             </div>
 
             <div className="mt-6">
-              {tab === "offers" && <OffersTab data={data} />}
+              {tab === "offers" && (
+                <OffersTab data={data} error={offerError} onDelete={onDeleteOffer} />
+              )}
               {tab === "favorites" && <FavoritesTab data={data} />}
               {tab === "searches" && (
                 <SearchesTab data={data} error={searchError} onDelete={onDelete} />
@@ -198,7 +215,15 @@ function EmptyState({
   );
 }
 
-function OffersTab({ data }: { data: DashboardData }) {
+function OffersTab({
+  data,
+  error,
+  onDelete,
+}: {
+  data: DashboardData;
+  error: string | null;
+  onDelete: (offerId: string) => Promise<void>;
+}) {
   const live = data.offers.filter((offer) => !isExpired(offer.postedAt)).length;
   const expired = data.offers.length - live;
 
@@ -213,6 +238,12 @@ function OffersTab({ data }: { data: DashboardData }) {
         </p>
       </div>
 
+      {error && (
+        <p role="alert" className="mt-3 text-xs text-destructive-foreground">
+          {error}
+        </p>
+      )}
+
       {data.offers.length === 0 ? (
         <EmptyState
           title="No offers yet"
@@ -226,14 +257,24 @@ function OffersTab({ data }: { data: DashboardData }) {
       ) : (
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {data.offers.map((offer) => (
-            <OfferCard key={offer.publicId} offer={offer} />
+            <div key={offer.publicId} className="flex flex-col gap-1.5">
+              <OfferCard offer={offer} />
+              <button
+                type="button"
+                className="btn-ghost self-end text-xs text-destructive-foreground"
+                onClick={() => void onDelete(offer.publicId)}
+                aria-label={`Delete offer ${offer.title}`}
+              >
+                Delete offer
+              </button>
+            </div>
           ))}
         </div>
       )}
 
       <p className="mt-4 text-xs text-muted-foreground">
-        Offers older than 30 days stay listed here but drop out of the marketplace. Editing and
-        deleting offers comes with Phase 5.
+        Offers older than 30 days stay listed here but drop out of the marketplace. Deleting an
+        offer removes it everywhere, including from other members’ saved lists.
       </p>
     </section>
   );

@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { SiteNav } from "@/components/market/SiteNav";
 import { SiteFooter } from "@/components/market/SiteFooter";
 import { adStatus, adStatusLabel, adHref } from "@/lib/ads";
+import type { DailyPoint } from "@/lib/insights.server";
 import { relativeTime } from "@/lib/offer-format";
 import {
   adminBoostSeller,
@@ -43,9 +44,18 @@ const EMPTY_FORM = {
   targetUrl: "",
   categories: "",
   maxClicks: "0",
+  pricePerClick: "0",
   expiresAt: "",
   mediaUrl: "",
 };
+
+function formatCount(value: number): string {
+  return String(Math.round(value)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+function formatEuro(value: number): string {
+  return `${value.toFixed(2).replace(".", ",")} €`;
+}
 
 function AdminPage() {
   const result = Route.useLoaderData();
@@ -129,6 +139,50 @@ function AdminPage() {
             {error}
           </p>
         )}
+
+        {/* Insights */}
+        <section className="mt-8" aria-labelledby="admin-insights">
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <h2 id="admin-insights" className="text-lg font-semibold">
+              Last {data.insights.days} days
+            </h2>
+            <p className="font-mono text-xs text-muted-foreground">UTC · rolling window</p>
+          </div>
+
+          <dl className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <Stat
+              label="Members"
+              value={formatCount(data.insights.totals.members)}
+              note={`+${formatCount(data.insights.totals.newMembers)} new`}
+            />
+            <Stat
+              label="New offers"
+              value={formatCount(data.insights.totals.newOffers)}
+              note="posted"
+            />
+            <Stat
+              label="Ad clicks"
+              value={formatCount(data.insights.totals.adClicks)}
+              note="counted"
+            />
+            <Stat
+              label="Revenue"
+              value={formatEuro(data.insights.totals.revenue)}
+              note="clicks × price per click"
+            />
+          </dl>
+
+          <div className="mt-3 grid gap-3 lg:grid-cols-3">
+            <BarChart title="New members" points={data.insights.members} format={formatCount} />
+            <BarChart title="New offers" points={data.insights.offers} format={formatCount} />
+            <BarChart title="Revenue" points={data.insights.revenue} format={formatEuro} />
+          </div>
+
+          <p className="mt-2 text-xs text-muted-foreground">
+            Revenue counts billable ad clicks only: a campaign with a price per click of 0
+            contributes nothing, and nothing else on the site sells anything yet.
+          </p>
+        </section>
 
         {/* Ads */}
         <section className="mt-8" aria-labelledby="admin-ads">
@@ -230,6 +284,7 @@ function AdminPage() {
                   data: {
                     ...form,
                     maxClicks: Number(form.maxClicks) || 0,
+                    pricePerClick: Number(form.pricePerClick.replace(",", ".")) || 0,
                   },
                 });
                 setForm(EMPTY_FORM);
@@ -308,6 +363,23 @@ function AdminPage() {
                   value={form.maxClicks}
                   onChange={(event) =>
                     setForm({ ...form, maxClicks: event.target.value.replace(/[^\d]/g, "") })
+                  }
+                />
+              </label>
+
+              <label className="text-xs">
+                <span className="mb-1 block text-muted-foreground">
+                  Price per click (€, 0 = free)
+                </span>
+                <input
+                  className="field font-mono"
+                  inputMode="decimal"
+                  value={form.pricePerClick}
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+                      pricePerClick: event.target.value.replace(/[^\d.,]/g, ""),
+                    })
                   }
                 />
               </label>
@@ -514,5 +586,65 @@ function AdminPage() {
 
       <SiteFooter />
     </div>
+  );
+}
+
+function Stat({ label, value, note }: { label: string; value: string; note?: string }) {
+  return (
+    <div className="surface p-4">
+      <dt className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </dt>
+      <dd className="mt-1 font-display text-xl font-semibold">{value}</dd>
+      {note && <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">{note}</p>}
+    </div>
+  );
+}
+
+/**
+ * Small bar chart drawn with plain divs: no chart dependency, no width measuring,
+ * and it renders identically on the server and after hydration.
+ */
+function BarChart({
+  title,
+  points,
+  format,
+}: {
+  title: string;
+  points: DailyPoint[];
+  format: (value: number) => string;
+}) {
+  const max = Math.max(1, ...points.map((point) => point.value));
+  const total = points.reduce((sum, point) => sum + point.value, 0);
+  const peak = points.reduce((best, point) => Math.max(best, point.value), 0);
+
+  return (
+    <figure className="surface p-4">
+      <figcaption className="flex flex-wrap items-baseline justify-between gap-2">
+        <h3 className="text-sm font-semibold">{title}</h3>
+        <span className="font-mono text-[11px] text-muted-foreground">{format(total)} total</span>
+      </figcaption>
+
+      <div
+        className="mt-3 flex h-24 items-end gap-[2px]"
+        role="img"
+        aria-label={`${title}: ${format(total)} in the last ${points.length} days`}
+      >
+        {points.map((point) => (
+          <div
+            key={point.day}
+            title={`${point.day}: ${format(point.value)}`}
+            className={`flex-1 rounded-t-sm ${point.value === 0 ? "bg-muted" : "bg-accent/70"}`}
+            style={{ height: `${Math.max(2, (point.value / max) * 100)}%` }}
+          />
+        ))}
+      </div>
+
+      <div className="mt-1.5 flex justify-between font-mono text-[10px] text-muted-foreground">
+        <span>{points[0]?.day.slice(5)}</span>
+        {peak > 0 && <span>peak {format(peak)}</span>}
+        <span>{points[points.length - 1]?.day.slice(5)}</span>
+      </div>
+    </figure>
   );
 }

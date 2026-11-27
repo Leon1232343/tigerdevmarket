@@ -92,6 +92,37 @@ export const fetchDashboard = createServerFn({ method: "GET" }).handler(
   },
 );
 
+/** Removes one of the member's own offers and the rows that point at it. */
+export const deleteMyOffer = createServerFn({ method: "POST" })
+  .inputValidator((input: { offerId: string }) => ({
+    offerId: String(input?.offerId ?? "").trim(),
+  }))
+  .handler(async ({ data }) => {
+    const offerId = Number(data.offerId);
+    if (!Number.isInteger(offerId) || offerId <= 0) throw new Error("Invalid offer.");
+
+    const { requireSessionUser } = await import("./session-user.server");
+    const user = await requireSessionUser();
+
+    const offersDb = await import("./offers.server");
+    const removed = await offersDb.deleteOfferForSeller(offerId, user.discordId);
+    if (!removed) throw new Error("That offer is not yours or no longer exists.");
+
+    // Favorites live in Supabase while the offer itself lives in the offers database.
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { error } = await supabaseAdmin
+        .from("favorites")
+        .delete()
+        .eq("offer_id", String(offerId));
+      if (error) console.warn("[favorites] cleanup after offer delete failed", error.message);
+    } catch (cause) {
+      console.warn("[favorites] cleanup after offer delete failed", cause);
+    }
+
+    return { ok: true };
+  });
+
 /** Resets the "new matches" baseline once the member opened the saved searches. */
 export const markSavedSearchesSeen = createServerFn({ method: "POST" })
   .inputValidator(() => ({}))

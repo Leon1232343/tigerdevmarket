@@ -220,6 +220,8 @@ export type NewAdInput = {
   maxClicks: number;
   expiresAt: string | null;
   mediaUrl: string;
+  /** Euro per counted click; 0 keeps a campaign free, which is what billing reports. */
+  pricePerClick: number;
 };
 
 export async function createAd(input: NewAdInput): Promise<number> {
@@ -231,7 +233,7 @@ export async function createAd(input: NewAdInput): Promise<number> {
   const rows = await query<{ ad_id: number }>(
     `INSERT INTO ads (advertiser, title, description, target_url, categories, active,
                       price_per_click, max_clicks, expires_at, media_url, video_url)
-     VALUES ($1, $2, $3, $4, $5, 1, 0, $6, $7, $8, '')
+     VALUES ($1, $2, $3, $4, $5, 1, $6, $7, $8, $9, '')
      RETURNING ad_id`,
     [
       input.advertiser.trim().slice(0, 80),
@@ -239,6 +241,7 @@ export async function createAd(input: NewAdInput): Promise<number> {
       input.description.trim().slice(0, 200),
       target,
       input.categories.trim().slice(0, 200),
+      Math.max(0, Number(input.pricePerClick) || 0),
       Math.max(0, Math.floor(input.maxClicks)),
       input.expiresAt,
       safeHttpUrl(input.mediaUrl) ?? "",

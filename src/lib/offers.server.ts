@@ -369,6 +369,25 @@ export async function listOffersBySeller(sellerId: string, limit = 100): Promise
   return rows.map(mapOffer);
 }
 
+/**
+ * Deletes one of a seller's own offers. The `seller_id` predicate is the whole
+ * authorization: an offer id on its own must never be enough.
+ */
+export async function deleteOfferForSeller(offerId: number, sellerId: string): Promise<boolean> {
+  if (!Number.isInteger(offerId) || offerId <= 0) return false;
+  if (!/^[\w-]{1,40}$/.test(sellerId)) return false;
+
+  const rows = await query<{ offer_id: number }>(
+    `DELETE FROM offers WHERE offer_id = $1 AND seller_id = $2 RETURNING offer_id`,
+    [offerId, sellerId],
+  );
+  if (rows.length === 0) return false;
+
+  // Ratings belong to the offer; without this the seller page would keep showing them.
+  await query(`DELETE FROM ratings WHERE offer_id = $1`, [offerId]).catch(() => []);
+  return true;
+}
+
 export type MatchableOfferRow = MatchableOffer & { postedAt: string | null };
 
 /**

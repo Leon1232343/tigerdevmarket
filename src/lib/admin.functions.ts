@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import type { AdWithStats } from "./ads";
+import type { AdminInsights } from "./insights.server";
 
 export type AdminBoost = { sellerId: string; username: string; expiresAt: string };
 export type AdminPinnedOffer = { offerId: number; seller: string; pinnedAt: string | null };
@@ -8,6 +9,7 @@ export type AdminData = {
   ads: AdWithStats[];
   boosts: AdminBoost[];
   pinned: AdminPinnedOffer[];
+  insights: AdminInsights;
 };
 
 export type AdminResult =
@@ -30,12 +32,14 @@ export const fetchAdminData = createServerFn({ method: "GET" }).handler(
     if (!isOwner(user)) return { status: "denied" };
 
     const ads = await import("./ads.server");
-    const [list, boosts, pinned] = await Promise.all([
+    const insights = await import("./insights.server");
+    const [list, boosts, pinned, numbers] = await Promise.all([
       ads.listAdsWithStats(),
       ads.listBoosts(),
       ads.listPinnedOffers(),
+      insights.getAdminInsights(),
     ]);
-    return { status: "ok", data: { ads: list, boosts, pinned } };
+    return { status: "ok", data: { ads: list, boosts, pinned, insights: numbers } };
   },
 );
 
@@ -50,6 +54,7 @@ export const adminCreateAd = createServerFn({ method: "POST" })
       maxClicks: number;
       expiresAt: string;
       mediaUrl: string;
+      pricePerClick: number;
     }) => ({
       advertiser: String(input?.advertiser ?? "").trim(),
       title: String(input?.title ?? "").trim(),
@@ -59,6 +64,9 @@ export const adminCreateAd = createServerFn({ method: "POST" })
       maxClicks: Number.isFinite(input?.maxClicks) ? Number(input.maxClicks) : 0,
       expiresAt: String(input?.expiresAt ?? "").trim(),
       mediaUrl: String(input?.mediaUrl ?? "").trim(),
+      pricePerClick: Number.isFinite(input?.pricePerClick)
+        ? Math.max(0, Number(input.pricePerClick))
+        : 0,
     }),
   )
   .handler(async ({ data }) => {
