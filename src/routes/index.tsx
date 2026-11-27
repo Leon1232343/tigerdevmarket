@@ -427,7 +427,9 @@ function HomePage() {
                   : smartFetching && !interpretation
                     ? "AI is reading your question…"
                     : interpretation?.aiFailed
-                      ? "AI unavailable — matching by keywords:"
+                      ? interpretation.aiReason === "rate_limited"
+                        ? "Search limit reached — keyword results:"
+                        : "AI unavailable — matching by keywords:"
                       : `AI understood${interpretation?.aiProvider ? ` (${interpretation.aiProvider})` : ""}:`}
               </span>
               {interpretation?.aiFailed && smartTerm && <span className="chip">{smartTerm}</span>}

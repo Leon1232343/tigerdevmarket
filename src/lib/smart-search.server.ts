@@ -153,6 +153,11 @@ function failed(text: string, reason: string): Interpretation {
   };
 }
 
+/** Interpret without asking a model, e.g. when the caller is over its budget. */
+export function keywordOnly(text: string, reason: string): Interpretation {
+  return failed(text, reason);
+}
+
 /** Models often wrap JSON in prose or fences; take the outermost object. */
 function extractJson(content: string): Record<string, unknown> | null {
   const start = content.indexOf("{");
@@ -287,10 +292,14 @@ export async function smartSearchOffers(params: {
   search: string;
   page?: number;
   perPage?: number;
+  /** Skips the model call and matches keywords directly (rate limiting). */
+  skipAi?: boolean;
 }): Promise<SmartSearchResult> {
   const perPage = Math.min(Math.max(params.perPage ?? 12, 1), 48);
   const page = Math.max(params.page ?? 1, 1);
-  const interpretation = await interpretQuery(params.search);
+  const interpretation = params.skipAi
+    ? keywordOnly(params.search, "rate_limited")
+    : await interpretQuery(params.search);
 
   const where: string[] = [...QUALITY_WHERE];
   const values: unknown[] = [];
