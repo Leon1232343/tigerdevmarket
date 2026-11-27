@@ -3,6 +3,8 @@ import { SiteNav } from "@/components/market/SiteNav";
 import { SiteFooter } from "@/components/market/SiteFooter";
 import { Breadcrumbs } from "@/components/market/Breadcrumbs";
 import { MAX_AD_DESCRIPTION, MAX_AD_TITLE } from "@/lib/ads";
+import { AD_SLOTS, discountedEur, euro } from "@/lib/ad-slots";
+import { DiscordButton } from "@/components/market/DiscordButton";
 import { SITE_URL } from "@/lib/site";
 
 export const Route = createFileRoute("/advertise")({
@@ -26,6 +28,11 @@ export const Route = createFileRoute("/advertise")({
     ],
     links: [{ rel: "canonical", href: `${SITE_URL}/advertise` }],
   }),
+  // Payment links are read on the server: the URLs are public, the env vars are not.
+  loader: async () => {
+    const { adSlotPaymentLinks } = await import("@/lib/ad-slots.server");
+    return { payments: adSlotPaymentLinks() };
+  },
   component: AdvertisePage,
 });
 
@@ -56,6 +63,8 @@ const SPECS: { label: string; value: string }[] = [
 ];
 
 function AdvertisePage() {
+  const { payments } = Route.useLoaderData();
+
   return (
     <div className="flex min-h-screen flex-col">
       <SiteNav />
@@ -148,6 +157,83 @@ function AdvertisePage() {
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
             Every card carries the “Sponsored” label and an <code>rel="sponsored"</code> link.
+          </p>
+        </section>
+
+        <section className="mt-12" id="slots">
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <h2 className="text-xl font-semibold">Buy a slot</h2>
+            <span className="chip border-gold/40 text-gold">First 3 advertisers: 50% off</span>
+          </div>
+          <p className="mt-2 max-w-xl text-xs leading-relaxed text-muted-foreground">
+            Launch prices for a small, growing community. Crypto is confirmed automatically; for
+            PayPal send the transaction id in a ticket, because a personal account gives us no
+            automatic confirmation.
+          </p>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {AD_SLOTS.map((slot) => {
+              const links = payments[slot.id];
+              return (
+                <article key={slot.id} className="surface flex flex-col gap-3 p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-semibold">
+                        <span aria-hidden="true">{slot.emoji}</span> {slot.name}
+                      </h3>
+                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                        {slot.blurb}
+                      </p>
+                    </div>
+                    <p className="shrink-0 text-right">
+                      <span className="block font-display text-xl font-semibold">
+                        {euro(slot.priceEur)}
+                      </span>
+                      <span className="block font-mono text-[11px] text-muted-foreground">
+                        first 3: {euro(discountedEur(slot.priceEur))}
+                      </span>
+                    </p>
+                  </div>
+
+                  <ul className="space-y-1 text-xs text-muted-foreground">
+                    {slot.features.map((feature) => (
+                      <li key={feature}>· {feature}</li>
+                    ))}
+                  </ul>
+
+                  <div className="mt-auto flex flex-wrap gap-2 pt-1">
+                    {links.crypto ? (
+                      <a
+                        href={links.crypto}
+                        target="_blank"
+                        rel="nofollow noopener noreferrer"
+                        className="btn-accent text-xs"
+                      >
+                        Pay {euro(slot.priceEur)} with crypto
+                      </a>
+                    ) : (
+                      <span className="chip text-muted-foreground">Crypto: ask in the ticket</span>
+                    )}
+                    {links.paypal && (
+                      <a
+                        href={links.paypal}
+                        target="_blank"
+                        rel="nofollow noopener noreferrer"
+                        className="btn-ghost text-xs"
+                      >
+                        PayPal
+                      </a>
+                    )}
+                    <DiscordButton label="Ask first" className="btn-ghost text-xs" />
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+
+          <p className="mt-3 text-xs text-muted-foreground">
+            Every slot includes the required “Sponsored” label. We set your campaign live once the
+            payment is confirmed — usually within a few hours.
           </p>
         </section>
 
