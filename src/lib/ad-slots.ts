@@ -1,5 +1,5 @@
 /** Ad slot packages sold on /advertise. Prices are launch prices in euro. */
-export type AdSlotId = "starter" | "targeted" | "launch" | "post";
+export type AdSlotId = "starter" | "targeted" | "launch" | "boost";
 
 export type AdSlot = {
   id: AdSlotId;
@@ -32,22 +32,27 @@ export const AD_SLOTS: AdSlot[] = [
     name: "Launch",
     emoji: "🔴",
     priceEur: 20,
-    blurb: "The full package: targeted placement, server post and a report.",
+    blurb: "The full package: targeted placement, a search boost and a report.",
     features: [
       "Targeted placement",
       "GIF or video creative",
-      "Announcement post in the server",
+      "24h search boost",
       "Views & clicks report",
       "30 days",
     ],
   },
   {
-    id: "post",
-    name: "Server Post",
-    emoji: "📌",
-    priceEur: 3,
-    blurb: "A pinned announcement in the Discord server.",
-    features: ["Pinned in the server", "7 days"],
+    id: "boost",
+    name: "Search Boost",
+    emoji: "🚀",
+    priceEur: 2.5,
+    blurb: "Your offer sits at the very top of every search result for 24 hours.",
+    features: [
+      "Top of every search result",
+      "24 hours",
+      "🚀 badge on your offer",
+      "Live within 24h after payment",
+    ],
   },
 ];
 

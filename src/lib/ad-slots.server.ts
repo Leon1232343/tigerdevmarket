@@ -13,7 +13,7 @@ const CRYPTO_ENV: Record<AdSlotId, string> = {
   starter: "AD_CRYPTO_URL_STARTER",
   targeted: "AD_CRYPTO_URL_TARGETED",
   launch: "AD_CRYPTO_URL_LAUNCH",
-  post: "AD_CRYPTO_URL_POST",
+  boost: "AD_CRYPTO_URL_BOOST",
 };
 
 function httpsOnly(value: string | null | undefined): string | null {
