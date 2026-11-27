@@ -1,11 +1,13 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteNav } from "@/components/market/SiteNav";
 import { SiteFooter } from "@/components/market/SiteFooter";
 import { Breadcrumbs } from "@/components/market/Breadcrumbs";
 import { MAX_AD_DESCRIPTION, MAX_AD_TITLE } from "@/lib/ads";
-import { AD_SLOTS, discountedEur, euro } from "@/lib/ad-slots";
+import { AD_SLOTS, adSlotById, discountedEur, euro, type AdSlotId } from "@/lib/ad-slots";
 import { DiscordButton } from "@/components/market/DiscordButton";
 import { SITE_URL } from "@/lib/site";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/advertise")({
   head: () => ({
@@ -64,6 +66,9 @@ const SPECS: { label: string; value: string }[] = [
 
 function AdvertisePage() {
   const { payments } = Route.useLoaderData();
+  const [selected, setSelected] = useState<AdSlotId>("starter");
+  const selectedSlot = adSlotById(selected);
+  const selectedLinks = payments[selectedSlot.id];
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -83,9 +88,9 @@ function AdvertisePage() {
             counted click.
           </p>
           <div className="mt-6 flex flex-wrap gap-2">
-            <Link to="/post-offer" className="btn-accent">
-              List your service for free
-            </Link>
+            <a href="#slots" className="btn-accent">
+              Choose a slot
+            </a>
             <Link to="/" className="btn-ghost">
               See the marketplace
             </Link>
@@ -162,20 +167,36 @@ function AdvertisePage() {
 
         <section className="mt-12" id="slots">
           <div className="flex flex-wrap items-end justify-between gap-2">
-            <h2 className="text-xl font-semibold">Buy a slot</h2>
+            <h2 className="text-xl font-semibold">Choose your slot</h2>
             <span className="chip border-gold/40 text-gold">First 3 advertisers: 50% off</span>
           </div>
           <p className="mt-2 max-w-xl text-xs leading-relaxed text-muted-foreground">
-            Launch prices for a small, growing community. Crypto is confirmed automatically; for
-            PayPal send the transaction id in a ticket, because a personal account gives us no
-            automatic confirmation.
+            Pick one of the slots below, then pay with crypto or PayPal. Crypto is confirmed
+            automatically; for PayPal send the transaction id in a ticket, because a personal
+            account gives us no automatic confirmation.
           </p>
 
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Ad slots">
             {AD_SLOTS.map((slot) => {
-              const links = payments[slot.id];
+              const active = slot.id === selected;
               return (
-                <article key={slot.id} className="surface flex flex-col gap-3 p-5">
+                <div
+                  key={slot.id}
+                  role="radio"
+                  aria-checked={active}
+                  tabIndex={0}
+                  onClick={() => setSelected(slot.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setSelected(slot.id);
+                    }
+                  }}
+                  className={cn(
+                    "surface flex cursor-pointer flex-col gap-3 p-5 transition-colors",
+                    active ? "border-gold ring-1 ring-gold/40" : "hover:border-foreground/20",
+                  )}
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <h3 className="text-sm font-semibold">
@@ -201,57 +222,62 @@ function AdvertisePage() {
                     ))}
                   </ul>
 
-                  <div className="mt-auto flex flex-wrap gap-2 pt-1">
-                    {links.crypto ? (
-                      <a
-                        href={links.crypto}
-                        target="_blank"
-                        rel="nofollow noopener noreferrer"
-                        className="btn-accent text-xs"
-                      >
-                        Pay {euro(slot.priceEur)} with crypto
-                      </a>
-                    ) : (
-                      <span className="chip text-muted-foreground">Crypto: ask in the ticket</span>
+                  <span
+                    className={cn(
+                      "chip mt-auto w-fit",
+                      active ? "border-gold/40 text-gold" : "text-muted-foreground",
                     )}
-                    {links.paypal && (
-                      <a
-                        href={links.paypal}
-                        target="_blank"
-                        rel="nofollow noopener noreferrer"
-                        className="btn-ghost text-xs"
-                      >
-                        PayPal
-                      </a>
-                    )}
-                    <DiscordButton label="Ask first" className="btn-ghost text-xs" />
-                  </div>
-                </article>
+                  >
+                    {active ? "Selected" : "Select"}
+                  </span>
+                </div>
               );
             })}
+          </div>
+
+          <div className="surface mt-4 flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="chip">Your selection</p>
+              <h3 className="mt-2 text-sm font-semibold">
+                <span aria-hidden="true">{selectedSlot.emoji}</span> {selectedSlot.name} —{" "}
+                {euro(selectedSlot.priceEur)}
+              </h3>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                {selectedSlot.blurb} First 3 advertisers pay{" "}
+                {euro(discountedEur(selectedSlot.priceEur))}.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {selectedLinks.crypto ? (
+                <a
+                  href={selectedLinks.crypto}
+                  target="_blank"
+                  rel="nofollow noopener noreferrer"
+                  className="btn-accent text-xs"
+                >
+                  Buy {selectedSlot.name} with crypto
+                </a>
+              ) : (
+                <DiscordButton label="Buy via ticket" className="btn-accent text-xs" />
+              )}
+              {selectedLinks.paypal && (
+                <a
+                  href={selectedLinks.paypal}
+                  target="_blank"
+                  rel="nofollow noopener noreferrer"
+                  className="btn-ghost text-xs"
+                >
+                  PayPal
+                </a>
+              )}
+            </div>
           </div>
 
           <p className="mt-3 text-xs text-muted-foreground">
             Every slot includes the required “Sponsored” label. We set your campaign live once the
             payment is confirmed — usually within a few hours.
           </p>
-        </section>
-
-        <section className="surface mt-12 flex flex-col items-start gap-3 p-6">
-          <h2 className="text-lg font-semibold">Book a placement</h2>
-          <p className="max-w-xl text-xs leading-relaxed text-muted-foreground">
-            Placements are booked directly by the Tiger Market team inside our Discord server. Send
-            your title, description, banner and target URL there and we set the campaign live —
-            including its click budget and end date.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <Link to="/post-offer" className="btn-accent">
-              Post your offer
-            </Link>
-            <Link to="/scam-database" className="btn-ghost">
-              Read our safety rules
-            </Link>
-          </div>
         </section>
       </main>
 

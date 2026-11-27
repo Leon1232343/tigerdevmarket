@@ -51,6 +51,13 @@ export const AD_SLOTS: AdSlot[] = [
   },
 ];
 
+/** Typed lookup so callers never index the array directly. */
+export function adSlotById(id: AdSlotId): AdSlot {
+  const slot = AD_SLOTS.find((candidate) => candidate.id === id);
+  if (!slot) throw new Error(`Unknown ad slot: ${id}`);
+  return slot;
+}
+
 /** The first three advertisers pay half; shown next to the list price. */
 const DISCOUNT_SHARE = 0.5;
 
