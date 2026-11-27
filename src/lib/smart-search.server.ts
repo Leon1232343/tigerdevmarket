@@ -22,7 +22,11 @@ type ProviderConfig = {
   /** Environment variables checked in order; the first one that is set wins. */
   keyEnv: string[];
   url: string;
-  model: string;
+  /**
+   * Tried in order. NVIDIA retires hosted endpoints without notice (a key that
+   * worked yesterday answers 410 Gone today), so more than one id is the norm.
+   */
+  models: string[];
   /** Request fields this provider understands (token limits differ per vendor). */
   extra: Record<string, unknown>;
 };
@@ -39,8 +43,15 @@ export const AI_PROVIDERS: ProviderConfig[] = [
     label: "NVIDIA NIM",
     keyEnv: ["NVIDIA_API_KEY", "NVIDIA_NIM_API_KEY"],
     url: "https://integrate.api.nvidia.com/v1/chat/completions",
-    model: "openai/gpt-oss-20b",
-    // Same reasoning-model caveat as Groq: the budget must cover thinking + JSON.
+    // Small, fast models first: this task only needs a seven-field JSON object.
+    models: [
+      "nvidia/nemotron-3.5-lightning-30b-a3b",
+      "z-ai/glm-5.3-flash",
+      "meta/muse-glimmer-30b",
+      "google/gemma-4-31b-it",
+      "deepseek-ai/deepseek-v4.1-flash",
+    ],
+    // Reasoning models spend tokens on thinking before they write the JSON.
     extra: { max_tokens: 1500 },
   },
   {
@@ -48,7 +59,7 @@ export const AI_PROVIDERS: ProviderConfig[] = [
     label: "Groq",
     keyEnv: ["GROQ_API_KEY"],
     url: "https://api.groq.com/openai/v1/chat/completions",
-    model: "openai/gpt-oss-120b",
+    models: ["openai/gpt-oss-120b", "openai/gpt-oss-20b"],
     extra: {
       // gpt-oss spends completion tokens on reasoning first: too small a budget
       // returns an empty message, so give it room and keep the reasoning short.
@@ -63,7 +74,7 @@ export const AI_PROVIDERS: ProviderConfig[] = [
     keyEnv: ["OPENROUTER_API_KEY"],
     url: "https://openrouter.ai/api/v1/chat/completions",
     // The router picks whichever free model is available right now.
-    model: "openrouter/free",
+    models: ["openrouter/free"],
     extra: { max_tokens: 900 },
   },
   {
@@ -71,7 +82,7 @@ export const AI_PROVIDERS: ProviderConfig[] = [
     label: "Cerebras",
     keyEnv: ["CEREBRAS_API_KEY"],
     url: "https://api.cerebras.ai/v1/chat/completions",
-    model: "gpt-oss-120b",
+    models: ["gpt-oss-120b"],
     extra: { max_tokens: 900 },
   },
 ];
@@ -182,33 +193,50 @@ async function askProvider(
   const key = providerKey(provider);
   if (!key) return null;
 
-  const response = await fetch(provider.url, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${key}`,
-    },
-    body: JSON.stringify({
-      model: provider.model,
-      temperature: 0,
-      ...provider.extra,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: text },
-      ],
-    }),
-  });
+  let gone = false;
 
-  if (!response.ok) {
-    const body = (await response.text()).slice(0, 300);
-    console.error(`Smart search ${provider.id} [${response.status}]: ${body}`);
-    throw new Error(`http_${response.status}`);
+  for (const model of provider.models) {
+    const response = await fetch(provider.url, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${key}`,
+      },
+      body: JSON.stringify({
+        model,
+        temperature: 0,
+        ...provider.extra,
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: text },
+        ],
+      }),
+    });
+
+    // 404/410 mean this hosted model is retired: the next id may still work.
+    if (response.status === 404 || response.status === 410) {
+      console.error(`Smart search ${provider.id}: model ${model} is gone [${response.status}]`);
+      gone = true;
+      continue;
+    }
+
+    if (!response.ok) {
+      const body = (await response.text()).slice(0, 300);
+      console.error(`Smart search ${provider.id}/${model} [${response.status}]: ${body}`);
+      throw new Error(`http_${response.status}`);
+    }
+
+    const payload = (await response.json()) as {
+      choices?: { message?: { content?: string } }[];
+    };
+    const parsed = extractJson(payload.choices?.[0]?.message?.content ?? "");
+    if (parsed) return parsed;
+
+    console.error(`Smart search ${provider.id}/${model}: no usable JSON in the reply`);
   }
 
-  const payload = (await response.json()) as {
-    choices?: { message?: { content?: string } }[];
-  };
-  return extractJson(payload.choices?.[0]?.message?.content ?? "");
+  if (gone) throw new Error("model_gone");
+  return null;
 }
 
 function toInterpretation(parsed: Record<string, unknown>, text: string, id: string) {
