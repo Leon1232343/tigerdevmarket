@@ -4,7 +4,7 @@ import { SiteNav } from "@/components/market/SiteNav";
 import { SiteFooter } from "@/components/market/SiteFooter";
 import { Breadcrumbs } from "@/components/market/Breadcrumbs";
 import { MAX_AD_DESCRIPTION, MAX_AD_TITLE } from "@/lib/ads";
-import { AD_SLOTS, adSlotById, discountedEur, euro, type AdSlotId } from "@/lib/ad-slots";
+import { AD_SLOTS, adSlotById, euro, type AdSlotId } from "@/lib/ad-slots";
 import { DiscordButton } from "@/components/market/DiscordButton";
 import { SITE_URL } from "@/lib/site";
 import { cn } from "@/lib/utils";
@@ -166,10 +166,7 @@ function AdvertisePage() {
         </section>
 
         <section className="mt-12" id="slots">
-          <div className="flex flex-wrap items-end justify-between gap-2">
-            <h2 className="text-xl font-semibold">Choose your slot</h2>
-            <span className="chip border-gold/40 text-gold">First 3 advertisers: 50% off</span>
-          </div>
+          <h2 className="text-xl font-semibold">Choose your slot</h2>
           <p className="mt-2 max-w-xl text-xs leading-relaxed text-muted-foreground">
             Pick one of the slots below, then pay with crypto or PayPal. Crypto is confirmed
             automatically; for PayPal send the transaction id in a ticket, because a personal
@@ -210,9 +207,6 @@ function AdvertisePage() {
                       <span className="block font-display text-xl font-semibold">
                         {euro(slot.priceEur)}
                       </span>
-                      <span className="block font-mono text-[11px] text-muted-foreground">
-                        first 3: {euro(discountedEur(slot.priceEur))}
-                      </span>
                     </p>
                   </div>
 
@@ -243,8 +237,7 @@ function AdvertisePage() {
                 {euro(selectedSlot.priceEur)}
               </h3>
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                {selectedSlot.blurb} First 3 advertisers pay{" "}
-                {euro(discountedEur(selectedSlot.priceEur))}.
+                {selectedSlot.blurb}
               </p>
             </div>
 

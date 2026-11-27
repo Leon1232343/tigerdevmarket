@@ -63,13 +63,6 @@ export function adSlotById(id: AdSlotId): AdSlot {
   return slot;
 }
 
-/** The first three advertisers pay half; shown next to the list price. */
-const DISCOUNT_SHARE = 0.5;
-
-export function discountedEur(priceEur: number): number {
-  return Math.round(priceEur * DISCOUNT_SHARE * 100) / 100;
-}
-
 export function euro(value: number): string {
   return `€${value % 1 === 0 ? value : value.toFixed(2)}`;
 }
