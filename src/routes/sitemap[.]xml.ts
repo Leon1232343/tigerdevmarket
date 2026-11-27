@@ -75,7 +75,9 @@ export const Route = createFileRoute("/sitemap.xml")({
         return new Response(xml, {
           headers: {
             "Content-Type": "application/xml",
-            "Cache-Control": "public, max-age=3600",
+            // The sitemap is rebuilt from the database on every miss and can exceed
+            // a megabyte, so let the edge hold it for a day.
+            "Cache-Control": "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800",
           },
         });
       },

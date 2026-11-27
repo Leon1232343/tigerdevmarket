@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { SiteNav } from "@/components/market/SiteNav";
 import { SafetyBanner } from "@/components/market/SafetyBanner";
@@ -64,19 +64,25 @@ function smartQueryOptions(search: string, page: number) {
   });
 }
 
+// Filters stay optional so a bare "/" keeps an empty search string. Injecting
+// defaults here would rewrite the URL on every visit (307 to the fully
+// parametrised variant); the defaults are applied where the values are used.
+const optionalString = z.string().optional().catch(undefined);
+const optionalNumber = z.number().optional().catch(undefined);
+
 const searchSchema = z.object({
-  cat: fallback(z.string(), "all").default("all"),
-  type: fallback(z.string(), "all").default("all"),
-  q: fallback(z.string(), "").default(""),
-  ai: fallback(z.string(), "").default(""),
-  page: fallback(z.number().int(), 1).default(1),
-  sort: fallback(z.string(), "newest").default("newest"),
-  min: z.number().optional(),
-  max: z.number().optional(),
-  cur: fallback(z.string(), "robux").default("robux"),
-  pay: fallback(z.string().array(), []).default([]),
-  verified: fallback(z.boolean(), false).default(false),
-  images: fallback(z.boolean(), false).default(false),
+  cat: optionalString,
+  type: optionalString,
+  q: optionalString,
+  ai: optionalString,
+  page: z.number().int().optional().catch(undefined),
+  sort: optionalString,
+  min: optionalNumber,
+  max: optionalNumber,
+  cur: optionalString,
+  pay: z.string().array().optional().catch(undefined),
+  verified: z.boolean().optional().catch(undefined),
+  images: z.boolean().optional().catch(undefined),
 });
 type HomeSearch = z.infer<typeof searchSchema>;
 
@@ -152,12 +158,12 @@ function HomePage() {
   const { overview: initialOverview, initialOffers, initialSponsored } = Route.useLoaderData();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
-  const { cat: category, type: postType, ai: smartTerm, page } = search;
-  const [query, setQuery] = useState(search.q || search.ai);
+  const { cat: category = "all", type: postType = "all", ai: smartTerm = "", page = 1 } = search;
+  const [query, setQuery] = useState(search.q || search.ai || "");
   const [minDraft, setMinDraft] = useState(search.min?.toString() ?? "");
   const [maxDraft, setMaxDraft] = useState(search.max?.toString() ?? "");
 
-  useEffect(() => setQuery(search.q || search.ai), [search.q, search.ai]);
+  useEffect(() => setQuery(search.q ?? search.ai ?? ""), [search.q, search.ai]);
   useEffect(() => {
     setMinDraft(search.min?.toString() ?? "");
     setMaxDraft(search.max?.toString() ?? "");
@@ -191,7 +197,7 @@ function HomePage() {
   const input: OfferListInput = {
     category,
     postType,
-    search: search.q,
+    search: search.q ?? "",
     page,
     perPage: PER_PAGE,
     ...filters,
