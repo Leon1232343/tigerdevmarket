@@ -4,13 +4,14 @@
  * A failing source degrades to an empty series instead of breaking the panel.
  */
 import { query } from "./offers.server";
+import { configuredProviders } from "./smart-search.server";
 
 export type DailyPoint = { day: string; value: number };
 
 export type AdminInsights = {
   days: number;
-  /** Presence of the smart-search key, so a silent fallback is visible in /admin. */
-  env: { groqConfigured: boolean };
+  /** Which smart-search providers have a key, so a fallback is visible in /admin. */
+  env: { aiProviders: { id: string; label: string; configured: boolean }[] };
   totals: {
     members: number;
     newMembers: number;
@@ -141,7 +142,7 @@ export async function getAdminInsights(): Promise<AdminInsights> {
 
   return {
     days: WINDOW_DAYS,
-    env: { groqConfigured: Boolean(process.env["GROQ_API_KEY"]) },
+    env: { aiProviders: configuredProviders() },
     totals: {
       members: memberData.total,
       newMembers: sum(memberData.series),

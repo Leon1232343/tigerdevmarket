@@ -428,7 +428,7 @@ function HomePage() {
                     ? "AI is reading your question…"
                     : interpretation?.aiFailed
                       ? "AI unavailable — matching by keywords:"
-                      : "AI understood:"}
+                      : `AI understood${interpretation?.aiProvider ? ` (${interpretation.aiProvider})` : ""}:`}
               </span>
               {interpretation?.aiFailed && smartTerm && <span className="chip">{smartTerm}</span>}
               {interpretation?.category && <span className="chip">{interpretation.category}</span>}

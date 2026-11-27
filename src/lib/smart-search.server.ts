@@ -1,7 +1,8 @@
 /**
  * AI smart search over the external offers database.
- * Uses the Groq API (free tier, OpenAI-compatible) to turn free-form text into
- * structured marketplace filters, then matches offers with keyword search.
+ * Turns free-form text into structured marketplace filters, then matches offers
+ * with keyword search. Several OpenAI-compatible providers are tried in order,
+ * so one rate-limited or unconfigured service does not disable the feature.
  * Server-only — never import from client code.
  */
 import {
@@ -15,12 +16,80 @@ import {
 import type { OfferRow } from "@/lib/offers.server";
 import type { Offer, PostType } from "@/lib/market-data";
 
-const GROQ_API = "https://api.groq.com/openai/v1/chat/completions";
-// Free tier: highest rate limits among Groq's current production models.
-const CHAT_MODEL = "openai/gpt-oss-120b";
+type ProviderConfig = {
+  id: string;
+  label: string;
+  /** Environment variables checked in order; the first one that is set wins. */
+  keyEnv: string[];
+  url: string;
+  model: string;
+  /** Request fields this provider understands (token limits differ per vendor). */
+  extra: Record<string, unknown>;
+};
 
-function apiKey(): string | null {
-  return process.env["GROQ_API_KEY"] ?? null;
+/**
+ * Ordered by free daily headroom, so the provider with the most left is tried
+ * first: NVIDIA NIM ~10k requests/day, Groq ~1k/day, OpenRouter 50/day on free
+ * models, Cerebras trial. All speak the OpenAI chat-completions shape, so one
+ * request builder covers every one of them.
+ */
+export const AI_PROVIDERS: ProviderConfig[] = [
+  {
+    id: "nvidia",
+    label: "NVIDIA NIM",
+    keyEnv: ["NVIDIA_API_KEY", "NVIDIA_NIM_API_KEY"],
+    url: "https://integrate.api.nvidia.com/v1/chat/completions",
+    model: "openai/gpt-oss-20b",
+    extra: { max_tokens: 900 },
+  },
+  {
+    id: "groq",
+    label: "Groq",
+    keyEnv: ["GROQ_API_KEY"],
+    url: "https://api.groq.com/openai/v1/chat/completions",
+    model: "openai/gpt-oss-120b",
+    extra: {
+      // gpt-oss spends completion tokens on reasoning first: too small a budget
+      // returns an empty message, so give it room and keep the reasoning short.
+      reasoning_effort: "low",
+      max_completion_tokens: 1500,
+      response_format: { type: "json_object" },
+    },
+  },
+  {
+    id: "openrouter",
+    label: "OpenRouter",
+    keyEnv: ["OPENROUTER_API_KEY"],
+    url: "https://openrouter.ai/api/v1/chat/completions",
+    // The router picks whichever free model is available right now.
+    model: "openrouter/free",
+    extra: { max_tokens: 900 },
+  },
+  {
+    id: "cerebras",
+    label: "Cerebras",
+    keyEnv: ["CEREBRAS_API_KEY"],
+    url: "https://api.cerebras.ai/v1/chat/completions",
+    model: "gpt-oss-120b",
+    extra: { max_tokens: 900 },
+  },
+];
+
+function providerKey(provider: ProviderConfig): string | null {
+  for (const name of provider.keyEnv) {
+    const value = process.env[name];
+    if (value) return value;
+  }
+  return null;
+}
+
+/** Which providers have a key, for the status chip in /admin. */
+export function configuredProviders(): { id: string; label: string; configured: boolean }[] {
+  return AI_PROVIDERS.map((provider) => ({
+    id: provider.id,
+    label: provider.label,
+    configured: providerKey(provider) !== null,
+  }));
 }
 
 export type Interpretation = {
@@ -32,12 +101,14 @@ export type Interpretation = {
   maxPrice: number | null;
   minPrice: number | null;
   /**
-   * True when the model could not be asked (no key, HTTP error, unusable reply).
+   * True when no model answered (no key, HTTP error, unusable reply).
    * The UI says so instead of pretending the query was understood.
    */
   aiFailed: boolean;
-  /** Short machine-readable reason, e.g. "not_configured" or "http_429". */
+  /** Short machine-readable reason, e.g. "no_provider_configured". */
   aiReason: string | null;
+  /** Provider that produced this interpretation, or null when it failed. */
+  aiProvider: string | null;
 };
 
 const CATEGORIES = [
@@ -51,6 +122,14 @@ const CATEGORIES = [
   "Sound/Music",
 ];
 
+const SYSTEM_PROMPT = `You turn a Roblox developer marketplace search query into JSON filters.
+Allowed "category" values: ${CATEGORIES.join(", ")} or null.
+Allowed "postType" values: hiring, forhire, buying, selling, investment, or null.
+Return ONLY JSON with keys: semanticQuery (string, cleaned English description of what the user wants),
+keywords (array of up to 5 short lowercase terms), category, postType,
+verifiedOnly (boolean), minPrice (number in Robux or null), maxPrice (number in Robux or null).
+The query may be in any language; semanticQuery must be English.`;
+
 const EMPTY_INTERPRETATION: Interpretation = {
   semanticQuery: "",
   keywords: [],
@@ -61,101 +140,137 @@ const EMPTY_INTERPRETATION: Interpretation = {
   minPrice: null,
   aiFailed: false,
   aiReason: null,
+  aiProvider: null,
 };
 
 /** Keyword matching still runs, so a failed model call degrades instead of breaking. */
 function failed(text: string, reason: string): Interpretation {
-  return { ...EMPTY_INTERPRETATION, semanticQuery: text, aiFailed: true, aiReason: reason };
+  return {
+    ...EMPTY_INTERPRETATION,
+    semanticQuery: text,
+    aiFailed: true,
+    aiReason: reason.slice(0, 200),
+  };
 }
 
-/** Ask the model to turn free-form text into structured marketplace filters. */
+/** Models often wrap JSON in prose or fences; take the outermost object. */
+function extractJson(content: string): Record<string, unknown> | null {
+  const start = content.indexOf("{");
+  const end = content.lastIndexOf("}");
+  if (start === -1 || end <= start) return null;
+
+  try {
+    const parsed = JSON.parse(content.slice(start, end + 1)) as unknown;
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+async function askProvider(
+  provider: ProviderConfig,
+  text: string,
+): Promise<Record<string, unknown> | null> {
+  const key = providerKey(provider);
+  if (!key) return null;
+
+  const response = await fetch(provider.url, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${key}`,
+    },
+    body: JSON.stringify({
+      model: provider.model,
+      temperature: 0,
+      ...provider.extra,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: text },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const body = (await response.text()).slice(0, 300);
+    console.error(`Smart search ${provider.id} [${response.status}]: ${body}`);
+    throw new Error(`http_${response.status}`);
+  }
+
+  const payload = (await response.json()) as {
+    choices?: { message?: { content?: string } }[];
+  };
+  return extractJson(payload.choices?.[0]?.message?.content ?? "");
+}
+
+function toInterpretation(parsed: Record<string, unknown>, text: string, id: string) {
+  const rawCategory = parsed["category"];
+  const rawPostType = parsed["postType"];
+  const category =
+    typeof rawCategory === "string"
+      ? (CATEGORIES.find((c) => c.toLowerCase() === rawCategory.toLowerCase()) ?? null)
+      : null;
+  const postTypes = new Set(Object.values(POST_TYPE_MAP));
+  const postType =
+    typeof rawPostType === "string" && postTypes.has(rawPostType as PostType)
+      ? (rawPostType as PostType)
+      : null;
+  const semantic = parsed["semanticQuery"];
+  const keywords = parsed["keywords"];
+  const minPrice = Number(parsed["minPrice"]);
+  const maxPrice = Number(parsed["maxPrice"]);
+
+  return {
+    semanticQuery:
+      typeof semantic === "string" && semantic.trim() ? semantic.trim().slice(0, 300) : text,
+    keywords: Array.isArray(keywords)
+      ? keywords
+          .filter((keyword): keyword is string => typeof keyword === "string")
+          .map((keyword) => keyword.trim().toLowerCase().slice(0, 32))
+          .filter(Boolean)
+          .slice(0, 5)
+      : [],
+    category,
+    postType,
+    verifiedOnly: parsed["verifiedOnly"] === true,
+    minPrice: Number.isFinite(minPrice) ? minPrice : null,
+    maxPrice: Number.isFinite(maxPrice) ? maxPrice : null,
+    aiFailed: false,
+    aiReason: null,
+    aiProvider: id,
+  } satisfies Interpretation;
+}
+
+/** Ask the first provider that answers to turn text into marketplace filters. */
 export async function interpretQuery(raw: string): Promise<Interpretation> {
   const text = raw.trim().slice(0, 300);
   if (!text) return EMPTY_INTERPRETATION;
 
-  const key = apiKey();
-  if (!key) {
-    console.error("Smart search: GROQ_API_KEY is not configured");
-    return failed(text, "not_configured");
+  const usable = AI_PROVIDERS.filter((provider) => providerKey(provider) !== null);
+  if (usable.length === 0) {
+    console.error("Smart search: no AI provider key configured");
+    return failed(text, "no_provider_configured");
   }
 
-  const system = `You turn a Roblox developer marketplace search query into JSON filters.
-Allowed "category" values: ${CATEGORIES.join(", ")} or null.
-Allowed "postType" values: hiring, forhire, buying, selling, investment, or null.
-Return ONLY JSON with keys: semanticQuery (string, cleaned English description of what the user wants),
-keywords (array of up to 5 short lowercase terms), category, postType,
-verifiedOnly (boolean), minPrice (number in Robux or null), maxPrice (number in Robux or null).
-The query may be in any language; semanticQuery must be English.`;
-
-  try {
-    const response = await fetch(GROQ_API, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        Authorization: `Bearer ${key}`,
-      },
-      body: JSON.stringify({
-        model: CHAT_MODEL,
-        temperature: 0,
-        // gpt-oss spends completion tokens on reasoning first: too small a budget
-        // returns an empty message, so give it room and keep the reasoning short.
-        reasoning_effort: "low",
-        max_completion_tokens: 1500,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: text },
-        ],
-      }),
-    });
-    if (!response.ok) {
-      console.error(`Smart search interpret failed [${response.status}]: ${await response.text()}`);
-      return failed(text, `http_${response.status}`);
+  const reasons: string[] = [];
+  for (const provider of usable) {
+    try {
+      const parsed = await askProvider(provider, text);
+      if (!parsed) {
+        console.error(`Smart search ${provider.id}: no usable JSON in the reply`);
+        reasons.push(`${provider.id}:unusable_reply`);
+        continue;
+      }
+      return toInterpretation(parsed, text, provider.id);
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "request_failed";
+      reasons.push(`${provider.id}:${reason}`);
     }
-    const payload = (await response.json()) as {
-      choices?: { message?: { content?: string } }[];
-    };
-    const content = payload.choices?.[0]?.message?.content ?? "";
-    if (!content.trim() || content.trim() === "{}") {
-      console.error("Smart search: the model returned no usable JSON");
-      return failed(text, "empty_model_output");
-    }
-    const parsed = JSON.parse(content) as Partial<Interpretation>;
-
-    const category =
-      typeof parsed.category === "string"
-        ? (CATEGORIES.find((c) => c.toLowerCase() === parsed.category!.toLowerCase()) ?? null)
-        : null;
-    const postTypes = new Set(Object.values(POST_TYPE_MAP));
-    const postType =
-      typeof parsed.postType === "string" && postTypes.has(parsed.postType as PostType)
-        ? (parsed.postType as PostType)
-        : null;
-
-    return {
-      semanticQuery:
-        typeof parsed.semanticQuery === "string" && parsed.semanticQuery.trim()
-          ? parsed.semanticQuery.trim().slice(0, 300)
-          : text,
-      keywords: Array.isArray(parsed.keywords)
-        ? parsed.keywords
-            .filter((k): k is string => typeof k === "string")
-            .map((k) => k.trim().toLowerCase().slice(0, 32))
-            .filter(Boolean)
-            .slice(0, 5)
-        : [],
-      category,
-      postType,
-      verifiedOnly: parsed.verifiedOnly === true,
-      minPrice: Number.isFinite(parsed.minPrice) ? Number(parsed.minPrice) : null,
-      maxPrice: Number.isFinite(parsed.maxPrice) ? Number(parsed.maxPrice) : null,
-      aiFailed: false,
-      aiReason: null,
-    };
-  } catch (error) {
-    console.error("Smart search interpret error", error);
-    return failed(text, "request_failed");
   }
+
+  return failed(text, reasons.join(", ") || "request_failed");
 }
 
 export type SmartSearchResult = {
