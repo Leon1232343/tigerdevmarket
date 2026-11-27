@@ -4,7 +4,14 @@
  * structured marketplace filters, then matches offers with keyword search.
  * Server-only — never import from client code.
  */
-import { query, mapOffer, SELECT_COLUMNS, JOINS, POST_TYPE_MAP, QUALITY_WHERE } from "@/lib/offers.server";
+import {
+  query,
+  mapOffer,
+  SELECT_COLUMNS,
+  JOINS,
+  POST_TYPE_MAP,
+  QUALITY_WHERE,
+} from "@/lib/offers.server";
 import type { OfferRow } from "@/lib/offers.server";
 import type { Offer, PostType } from "@/lib/market-data";
 
@@ -12,10 +19,8 @@ const GROQ_API = "https://api.groq.com/openai/v1/chat/completions";
 // Free tier: highest rate limits among Groq's current production models.
 const CHAT_MODEL = "openai/gpt-oss-120b";
 
-function apiKey(): string {
-  const key = process.env["GROQ_API_KEY"];
-  if (!key) throw new Error("GROQ_API_KEY is not configured");
-  return key;
+function apiKey(): string | null {
+  return process.env["GROQ_API_KEY"] ?? null;
 }
 
 export type Interpretation = {
@@ -26,6 +31,13 @@ export type Interpretation = {
   verifiedOnly: boolean;
   maxPrice: number | null;
   minPrice: number | null;
+  /**
+   * True when the model could not be asked (no key, HTTP error, unusable reply).
+   * The UI says so instead of pretending the query was understood.
+   */
+  aiFailed: boolean;
+  /** Short machine-readable reason, e.g. "not_configured" or "http_429". */
+  aiReason: string | null;
 };
 
 const CATEGORIES = [
@@ -47,12 +59,25 @@ const EMPTY_INTERPRETATION: Interpretation = {
   verifiedOnly: false,
   maxPrice: null,
   minPrice: null,
+  aiFailed: false,
+  aiReason: null,
 };
+
+/** Keyword matching still runs, so a failed model call degrades instead of breaking. */
+function failed(text: string, reason: string): Interpretation {
+  return { ...EMPTY_INTERPRETATION, semanticQuery: text, aiFailed: true, aiReason: reason };
+}
 
 /** Ask the model to turn free-form text into structured marketplace filters. */
 export async function interpretQuery(raw: string): Promise<Interpretation> {
   const text = raw.trim().slice(0, 300);
   if (!text) return EMPTY_INTERPRETATION;
+
+  const key = apiKey();
+  if (!key) {
+    console.error("Smart search: GROQ_API_KEY is not configured");
+    return failed(text, "not_configured");
+  }
 
   const system = `You turn a Roblox developer marketplace search query into JSON filters.
 Allowed "category" values: ${CATEGORIES.join(", ")} or null.
@@ -67,12 +92,15 @@ The query may be in any language; semanticQuery must be English.`;
       method: "POST",
       headers: {
         "content-type": "application/json",
-        Authorization: `Bearer ${apiKey()}`,
+        Authorization: `Bearer ${key}`,
       },
       body: JSON.stringify({
         model: CHAT_MODEL,
         temperature: 0,
-        max_tokens: 512,
+        // gpt-oss spends completion tokens on reasoning first: too small a budget
+        // returns an empty message, so give it room and keep the reasoning short.
+        reasoning_effort: "low",
+        max_completion_tokens: 1500,
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: system },
@@ -82,13 +110,17 @@ The query may be in any language; semanticQuery must be English.`;
     });
     if (!response.ok) {
       console.error(`Smart search interpret failed [${response.status}]: ${await response.text()}`);
-      return { ...EMPTY_INTERPRETATION, semanticQuery: text };
+      return failed(text, `http_${response.status}`);
     }
     const payload = (await response.json()) as {
       choices?: { message?: { content?: string } }[];
     };
-    const parsed = JSON.parse(payload.choices?.[0]?.message?.content ?? "{}") as
-      Partial<Interpretation>;
+    const content = payload.choices?.[0]?.message?.content ?? "";
+    if (!content.trim() || content.trim() === "{}") {
+      console.error("Smart search: the model returned no usable JSON");
+      return failed(text, "empty_model_output");
+    }
+    const parsed = JSON.parse(content) as Partial<Interpretation>;
 
     const category =
       typeof parsed.category === "string"
@@ -117,10 +149,12 @@ The query may be in any language; semanticQuery must be English.`;
       verifiedOnly: parsed.verifiedOnly === true,
       minPrice: Number.isFinite(parsed.minPrice) ? Number(parsed.minPrice) : null,
       maxPrice: Number.isFinite(parsed.maxPrice) ? Number(parsed.maxPrice) : null,
+      aiFailed: false,
+      aiReason: null,
     };
   } catch (error) {
     console.error("Smart search interpret error", error);
-    return { ...EMPTY_INTERPRETATION, semanticQuery: text };
+    return failed(text, "request_failed");
   }
 }
 

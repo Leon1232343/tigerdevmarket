@@ -172,6 +172,21 @@ function AdminPage() {
             />
           </dl>
 
+          <p className="mt-2 text-xs">
+            <span
+              className={`chip ${
+                data.insights.env.groqConfigured
+                  ? "border-accent/50 text-accent"
+                  : "border-destructive/50 text-destructive-foreground"
+              }`}
+            >
+              Smart search{" "}
+              {data.insights.env.groqConfigured
+                ? "ready (GROQ_API_KEY set)"
+                : "offline: GROQ_API_KEY missing"}
+            </span>
+          </p>
+
           <div className="mt-3 grid gap-3 lg:grid-cols-3">
             <BarChart title="New members" points={data.insights.members} format={formatCount} />
             <BarChart title="New offers" points={data.insights.offers} format={formatCount} />

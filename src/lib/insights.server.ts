@@ -9,6 +9,8 @@ export type DailyPoint = { day: string; value: number };
 
 export type AdminInsights = {
   days: number;
+  /** Presence of the smart-search key, so a silent fallback is visible in /admin. */
+  env: { groqConfigured: boolean };
   totals: {
     members: number;
     newMembers: number;
@@ -139,6 +141,7 @@ export async function getAdminInsights(): Promise<AdminInsights> {
 
   return {
     days: WINDOW_DAYS,
+    env: { groqConfigured: Boolean(process.env["GROQ_API_KEY"]) },
     totals: {
       members: memberData.total,
       newMembers: sum(memberData.series),

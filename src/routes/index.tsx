@@ -426,8 +426,11 @@ function HomePage() {
                   ? "Smart search unavailable — showing keyword results."
                   : smartFetching && !interpretation
                     ? "AI is reading your question…"
-                    : "AI understood:"}
+                    : interpretation?.aiFailed
+                      ? "AI unavailable — matching by keywords:"
+                      : "AI understood:"}
               </span>
+              {interpretation?.aiFailed && smartTerm && <span className="chip">{smartTerm}</span>}
               {interpretation?.category && <span className="chip">{interpretation.category}</span>}
               {interpretation?.postType && (
                 <span className="chip">
