@@ -40,7 +40,8 @@ export const AI_PROVIDERS: ProviderConfig[] = [
     keyEnv: ["NVIDIA_API_KEY", "NVIDIA_NIM_API_KEY"],
     url: "https://integrate.api.nvidia.com/v1/chat/completions",
     model: "openai/gpt-oss-20b",
-    extra: { max_tokens: 900 },
+    // Same reasoning-model caveat as Groq: the budget must cover thinking + JSON.
+    extra: { max_tokens: 1500 },
   },
   {
     id: "groq",

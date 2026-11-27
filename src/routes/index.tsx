@@ -433,6 +433,14 @@ function HomePage() {
                       : `AI understood${interpretation?.aiProvider ? ` (${interpretation.aiProvider})` : ""}:`}
               </span>
               {interpretation?.aiFailed && smartTerm && <span className="chip">{smartTerm}</span>}
+              {interpretation?.aiFailed && interpretation.aiReason && (
+                <span
+                  className="chip font-mono text-[10px] text-muted-foreground"
+                  title="Why the AI interpretation was skipped"
+                >
+                  {interpretation.aiReason}
+                </span>
+              )}
               {interpretation?.category && <span className="chip">{interpretation.category}</span>}
               {interpretation?.postType && (
                 <span className="chip">
